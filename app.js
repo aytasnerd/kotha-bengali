@@ -32,13 +32,11 @@ const GLOGO = '<svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true
 /* ---------- theme (light/dark x indigo/red) ---------- */
 const THEME_KEY='kotha.theme', ACCENT_KEY='kotha.accent';
 function curTheme(){ return localStorage.getItem(THEME_KEY)||'light'; }
-function curAccent(){ return localStorage.getItem(ACCENT_KEY)||'indigo'; }
+function curAccent(){ return 'indigo'; }
 function applyTheme(){ const r=document.documentElement; r.dataset.theme=curTheme(); r.dataset.accent=curAccent(); }
 function renderThemeCtl(){ const el=document.getElementById('themectl'); if(!el) return;
-  el.innerHTML=`<button class="tbtn" id="ttheme" title="Light or dark">${icon(curTheme()==='dark'?'sun':'moon')}</button>
-    <button class="tbtn accent-dot" id="taccent" title="Accent colour"></button>`;
+  el.innerHTML=`<button class="tbtn" id="ttheme" title="Light or dark">${icon(curTheme()==='dark'?'sun':'moon')}</button>`;
   el.querySelector('#ttheme').onclick=()=>{ localStorage.setItem(THEME_KEY,curTheme()==='light'?'dark':'light'); applyTheme(); renderThemeCtl(); };
-  el.querySelector('#taccent').onclick=()=>{ localStorage.setItem(ACCENT_KEY,curAccent()==='indigo'?'red':'indigo'); applyTheme(); renderThemeCtl(); };
 }
 
 /* ---------- story track + name personalization ---------- */
@@ -536,7 +534,7 @@ function renderStep(){
       <div class="q-en">${escapeHtml(p.en)}</div>
       <div class="q-sc">${p.sc}</div>
       <div class="q-roman">${tapify(p.r,p.words)}</div>
-      ${p.ph?`<div class="q-ph">${p.ph}</div>`:''}
+      ${p.ph?`<div class="q-ph">${escapeHtml(p.ph)}</div>`:''}
       <button class="speak-btn" data-say="${p.sc}">${SPK} Listen</button>
       <p class="q-hint" style="margin-top:16px">Tap any underlined word to open it, then say the line out loud.</p>
       <div class="player-actions"><button class="btn btn-teal" id="go">Got it</button></div>`);
