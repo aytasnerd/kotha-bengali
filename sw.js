@@ -1,5 +1,5 @@
-const C='kotha-v1785307361';
-const ASSETS=['./','./app.html','./index.html','./styles.css','./app.js','./data.js',
+const C='kotha-v1785329500';
+const ASSETS=['./','./app.html','./index.html','./styles.css','./app.js','./data.js','./strokes.js',
   './manifest.webmanifest','./icon.svg','./icon-192.png','./apple-touch-icon.png','./icon-512.png'];
 self.addEventListener('install',e=>{ self.skipWaiting();
   e.waitUntil(caches.open(C).then(c=>Promise.allSettled(ASSETS.map(a=>c.add(a))))); });

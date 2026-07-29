@@ -765,7 +765,7 @@ function viewLetter(gi){ const x=SCRIPT_ALL[gi]; if(!x) return viewScript();
   const isNum=gi>=SCRIPT.vowels.length+SCRIPT.consonants.length;
   const steps = isNum
     ? ['Start at the top of the numeral.','Draw it in one flowing stroke where you can, top to bottom.','Numerals carry no matra headline.']
-    : ['Draw the body first, starting at the top and moving down.','Make the curves and bellies left to right, keeping the pen flowing.','Add the matra, the headline across the top, last, left to right.'];
+    : ['Draw the body first, starting at the top and moving down.','Make the curves and bellies left to right, keeping the pen flowing.','The matra, the headline across the top, always runs left to right. Some letters take it first, others last, so follow the letter rather than a rule.','The animation is a shape guide traced from the letterform, not a taught stroke order.'];
   app().innerHTML=`<span class="crumb" onclick="location.hash='#/script'">${icon('back')} All letters</span>
     <div class="letter-top">
       <div class="lt-glyph">${x.ch}</div>
@@ -782,7 +782,7 @@ function viewLetter(gi){ const x=SCRIPT_ALL[gi]; if(!x) return viewScript();
       <div id="shint" class="stroke-hint"></div>
       <div class="trace-actions">
         <button class="btn btn-ghost btn-sm" id="prev">${icon('back')} Prev</button>
-        <button class="btn btn-teal btn-sm" id="animate">Show me</button>
+        <button class="btn btn-teal btn-sm" id="animate">Show the shape</button>
         <button class="btn btn-ghost btn-sm" id="clr">Clear</button>
         <button class="btn btn-primary btn-sm" id="next">Next ${icon('back','flip')}</button>
       </div>
@@ -809,20 +809,32 @@ function drawGlyph(ctx,ch,S,size){
   const asc=m.actualBoundingBoxAscent||size*0.8, dsc=m.actualBoundingBoxDescent||0;
   const w=l+r, h=asc+dsc;
   ctx.fillText(ch,(S-w)/2+l,(S-h)/2+asc);
+  return {x:(S-w)/2, y:(S-h)/2, w:w, h:h};
+}
+function glyphBox(ctx,ch,S,size){
+  ctx.save(); ctx.font=size+'px "Hind Siliguri","Noto Sans Bengali",serif';
+  const m=ctx.measureText(ch); ctx.restore();
+  const l=m.actualBoundingBoxLeft||0, r=m.actualBoundingBoxRight||m.width;
+  const asc=m.actualBoundingBoxAscent||size*0.8, dsc=m.actualBoundingBoxDescent||0;
+  const w=l+r, h=asc+dsc;
+  return {x:(S-w)/2, y:(S-h)/2, w:w||S, h:h||S};
 }
 /* ---------- stroke animation + tracing ----------
-   Where STROKES has real data for a letter we animate it being written,
-   stroke by stroke, matra last, and check the learner stroke by stroke.
-   Where we have no data we say so and offer free practice instead. */
+   The guides are traced from the letterform outlines, so the geometry is
+   real and the tracing check is meaningful. They are a shape guide and not
+   a taught stroke order: real Bengali order varies by letter, and the ones
+   we have verified against a workbook carry order:true.
+   Where we have no data at all we say so and offer free practice. */
 function strokeData(ch){ return (typeof STROKES!=='undefined' && STROKES[ch]) || null; }
-function pathPoints(d,S,n){
+function pathPoints(d,box,n){
   const p=document.createElementNS('http://www.w3.org/2000/svg','path');
   p.setAttribute('d',d);
   const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
   svg.style.position='absolute'; svg.style.opacity='0'; svg.setAttribute('viewBox','0 0 100 100');
   svg.appendChild(p); document.body.appendChild(svg);
   const len=p.getTotalLength(); const out=[];
-  for(let i=0;i<=n;i++){ const q=p.getPointAtLength(len*i/n); out.push([q.x*S/100,q.y*S/100]); }
+  for(let i=0;i<=n;i++){ const q=p.getPointAtLength(len*i/n);
+    out.push([box.x+q.x/100*box.w, box.y+q.y/100*box.h]); }
   svg.remove(); return out;
 }
 function initTrace(ch,matra){
@@ -832,7 +844,8 @@ function initTrace(ch,matra){
   const S=320, dpr=Math.min(window.devicePixelRatio||1,3);
   cv.width=S*dpr; cv.height=S*dpr; ctx.scale(dpr,dpr);
   const data=strokeData(ch);
-  const paths=data?data.strokes.map(st=>pathPoints(st.d,S,120)):null;
+  const box=glyphBox(ctx,ch,S,210);
+  const paths=data?data.strokes.map(st=>pathPoints(st.d,box,120)):null;
   let step=0, used=false, anim=null;
   const el=()=>$('#score');
   function ghostLetter(){
@@ -847,7 +860,7 @@ function initTrace(ch,matra){
   function frameHint(){
     if(!data) return;
     const h=$('#shint'); if(!h) return;
-    h.textContent = step<paths.length ? `Stroke ${step+1} of ${paths.length}. ${data.strokes[step].hint}` : 'All strokes done. Clear to try again.';
+    h.textContent = step<paths.length ? `Part ${step+1} of ${paths.length}. ${data.strokes[step].hint}` : 'Shape complete. Clear to try again.';
   }
   function bg(){ ghostLetter(); if(paths) drawDone(step); used=false; if(el()){el().textContent='';el().className='trace-score';} frameHint(); }
   function animate(){
