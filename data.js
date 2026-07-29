@@ -1546,81 +1546,59 @@ const TRACKS = [
 ];
 
 /* --- OPPOSITES (game) ----------------------------------------------------- */
-const OPPOSITES = [["bhalo", "kharap"],
-  ["boro", "chhoto"],
-  ["notun", "purono"],
-  ["beshi", "kom"],
-  ["ekhane", "okhane"],
-  ["hyañ", "na"],
-  ["daan", "baam"],
-  ["ekhon", "pore"],
-  ["shokal", "raat"],
-  ["gorom", "thanda"],
-  ["taja", "bashi"],
-  ["shoshta", "dami"],
-  ["bhari", "halka"],
-  ["lomba", "beñte"],
-  ["roga", "mota"],
-  ["shokto", "norom"],
-  ["porishkar", "nongra"],
-  ["mishti", "teto"],
-  ["kena", "becha"],
-  ["khushi", "dukkho"],
-  ["shanto", "dushtu"],
-  ["chalak", "boka"],
-  ["forsha", "kalo"],
-  ["dure", "kachhe"],
-  ["upore", "niche"],
-  ["shamne", "pichhone"],
-  ["bhetore", "baire"],
-  ["taratari", "deri"],
-  ["shohor", "gram"],
-  ["shada", "kalo"],
-  ["jol", "cha"],
-  ["din", "raat"],
-  ["dupur", "raat"],
-  ["bhor", "shondhe"],
-  ["gorom", "sheet"],
-  ["shurjo", "chand"],
-  ["hashi", "kanna"],
-  ["prothom", "shesh"],
-  ["shahoshi", "bhitu"],
-  ["bhodro", "bodmash"],
-  ["shorol", "chalak"],
-  ["khide", "teshta"],
-  ["jubok", "buro"],
-  ["chhele", "meye"],
-  ["baba", "ma"],
-  ["dada", "didi"],
-  ["bhai", "bon"],
-  ["aaj", "kal"],
-  ["age", "pore"],
-  ["shob", "kichhu"],
-  ["khuli", "bondho kora"],
-  ["shuru kori", "shesh kori"],
-  ["jai", "ashi"],
-  ["dii", "nii"],
-  ["kini", "bechi"],
-  ["uthi", "boshi"],
-  ["hashi", "kadi"],
-  ["jani", "bujhi"],
-  ["bhule jai", "mone pore"],
-  ["dhulo", "porishkar"],
-  ["jhal", "mishti"],
-  ["tok", "mishti"],
-  ["bhaja", "shiddho kori"],
-  ["nil", "lal"],
-  ["ucchota", "gobhirota"],
-  ["lomba", "chowra"],
-  ["obak", "shanto"],
-  ["rag", "khushi"],
-  ["bhoy", "shahoshi"],
-  ["olpo", "onek"],
-  ["aro", "kom"],
-  ["pouchhai", "beroi"],
-  ["phera", "jai"],
-  ["ghumai", "jagi"],
-  ["khai", "ranna kori"]];
+const OPPOSITES = [
+  ['bhalo','kharap'],
+  ['boro','chhoto'],
+  ['notun','purono'],
+  ['beshi','kom'],
+  ['ekhane','okhane'],
+  ['hyañ','na'],
+  ['daan','baam'],
+  ['ekhon','pore'],
+  ['shokal','raat'],
+  ['gorom','thanda'],
+  ['taja','bashi'],
+  ['shoshta','dami'],
+  ['bhari','halka'],
+  ['lomba','beñte'],
+  ['roga','mota'],
+  ['shokto','norom'],
+  ['porishkar','nongra'],
+  ['kena','becha'],
+  ['khushi','dukkho'],
+  ['shanto','dushtu'],
+  ['chalak','boka'],
+  ['forsha','kalo'],
+  ['dure','kachhe'],
+  ['upore','niche'],
+  ['shamne','pichhone'],
+  ['bhetore','baire'],
+  ['taratari','deri'],
+  ['shohor','gram'],
+  ['din','raat'],
+  ['bhor','shondhe'],
+  ['shurjo','chand'],
+  ['hashi','kanna'],
+  ['prothom','shesh'],
+  ['shahoshi','bhitu'],
+  ['bhodro','bodmash'],
+  ['chhele','meye'],
+  ['baba','ma'],
+  ['dada','didi'],
+  ['bhai','bon'],
+  ['aaj','kal'],
+  ['age','pore'],
+  ['jai','ashi'],
+  ['dii','nii'],
+  ['kini','bechi'],
+  ['uthi','boshi'],
+  ['ghumai','jagi'],
+  ['olpo','onek'],
+  ['jeta','hara'],
+  ['shotti','mitthe'],
+  ['shomman','lojja'],
+  ['anondo','dukkho']
+];
 
 const WORD_OF_DAY = 'jhal';
 
@@ -1631,29 +1609,29 @@ const SCRIPT = {
     {ch:'অ', name:'ô',   ipa:'/ɔ/', ex:'ôsomoy', exsc:'অসময়', exen:'wrong time'},
     {ch:'আ', name:'a',   ipa:'/a/', ex:'aam',    exsc:'আম',   exen:'mango'},
     {ch:'ই', name:'i',   ipa:'/i/', ex:'ilish',  exsc:'ইলিশ', exen:'hilsa fish'},
-    {ch:'ঈ', name:'dirgho i', ipa:'/i/', ex:'ish', exsc:'ঈশ', exen:'(exclamation)'},
+    {ch:'ঈ', name:'dirgho i', ipa:'/i/', ex:'igol', exsc:'ঈগল', exen:'eagle'},
     {ch:'উ', name:'u',   ipa:'/u/', ex:'uNchu',  exsc:'উঁচু', exen:'high'},
-    {ch:'ঊ', name:'dirgho u', ipa:'/u/', ex:'un', exsc:'ঊন', exen:'less by one'},
+    {ch:'ঊ', name:'dirgho u', ipa:'/u/', ex:'usha', exsc:'ঊষা', exen:'dawn'},
     {ch:'ঋ', name:'ri',  ipa:'/ri/',ex:'rishi',  exsc:'ঋষি', exen:'sage'},
     {ch:'এ', name:'e',   ipa:'/e/', ex:'ek',     exsc:'এক',  exen:'one'},
     {ch:'ঐ', name:'oi',  ipa:'/oi/',ex:'oi',     exsc:'ঐ',   exen:'that'},
     {ch:'ও', name:'o',   ipa:'/o/', ex:'ojon',   exsc:'ওজন', exen:'weight'},
-    {ch:'ঔ', name:'ou',  ipa:'/ou/',ex:'ousudh', exsc:'ঔষুধ',exen:'medicine'},
+    {ch:'ঔ', name:'ou',  ipa:'/ou/',ex:'oushodh', exsc:'ঔষধ', exen:'medicine'},
   ],
   consonants: [
     {ch:'ক', name:'kô',  ipa:'/k/',  ex:'kaaj',  exsc:'কাজ', exen:'work'},
     {ch:'খ', name:'khô', ipa:'/kʰ/', ex:'khide', exsc:'খিদে',exen:'hunger'},
     {ch:'গ', name:'gô',  ipa:'/g/',  ex:'gaan',  exsc:'গান', exen:'song'},
     {ch:'ঘ', name:'ghô', ipa:'/gʱ/', ex:'ghum',  exsc:'ঘুম', exen:'sleep'},
-    {ch:'ঙ', name:'ungô',ipa:'/ŋ/',  ex:'rong',  exsc:'রং',  exen:'colour'},
+    {ch:'ঙ', name:'ungô',ipa:'/ŋ/',  ex:'bangali', exsc:'বাঙালি', exen:'a Bengali'},
     {ch:'চ', name:'chô', ipa:'/tʃ/', ex:'cha',   exsc:'চা',  exen:'tea'},
     {ch:'ছ', name:'chhô',ipa:'/tʃʰ/',ex:'chhata', exsc:'ছাতা',exen:'umbrella'},
     {ch:'জ', name:'jô',  ipa:'/dʒ/', ex:'jol',   exsc:'জল',  exen:'water'},
     {ch:'ঝ', name:'jhô', ipa:'/dʒʱ/',ex:'jhal',  exsc:'ঝাল', exen:'spicy'},
     {ch:'ঞ', name:'niô', ipa:'/n/',  ex:'miÑa',  exsc:'মিঞা',exen:'mister'},
-    {ch:'ট', name:'Tô',  ipa:'/ʈ/',  ex:'taka',  exsc:'টাকা',exen:'money'},
-    {ch:'ঠ', name:'Thô', ipa:'/ʈʰ/', ex:'thik',  exsc:'ঠিক', exen:'right'},
-    {ch:'ড', name:'Dô',  ipa:'/ɖ/',  ex:'daan',  exsc:'ডান', exen:'right side'},
+    {ch:'ট', name:'Tô',  ipa:'/ʈ/',  ex:'Taka',  exsc:'টাকা',exen:'money'},
+    {ch:'ঠ', name:'Thô', ipa:'/ʈʰ/', ex:'Thik',  exsc:'ঠিক', exen:'right'},
+    {ch:'ড', name:'Dô',  ipa:'/ɖ/',  ex:'Daan',  exsc:'ডান', exen:'right side'},
     {ch:'ঢ', name:'Dhô', ipa:'/ɖʱ/', ex:'Dhaka', exsc:'ঢাকা',exen:'Dhaka'},
     {ch:'ণ', name:'murdha nô', ipa:'/n/', ex:'gun', exsc:'গুণ', exen:'quality'},
     {ch:'ত', name:'tô',  ipa:'/t̪/', ex:'taratari',exsc:'তাড়াতাড়ি',exen:'quickly'},
@@ -1674,7 +1652,12 @@ const SCRIPT = {
     {ch:'স', name:'donto shô',   ipa:'/ʃ/', ex:'shomoy', exsc:'সময়',  exen:'time'},
     {ch:'হ', name:'hô',  ipa:'/ɦ/',  ex:'hobe',  exsc:'হবে', exen:'will be'},
     {ch:'ড়', name:'Rô', ipa:'/ɽ/',  ex:'baRi',  exsc:'বাড়ি',exen:'home'},
-    {ch:'য়', name:'ontostho jô', ipa:'/j/', ex:'jaay', exsc:'যায়', exen:'goes'},
+    {ch:'য়', name:'ontostho ô', ipa:'/j/', ex:'jaay', exsc:'যায়', exen:'goes'},
+    {ch:'ঢ়', name:'Rhô', ipa:'/ɽʱ/', ex:'ashaRh', exsc:'আষাঢ়', exen:'the monsoon month'},
+    {ch:'ৎ', name:'khondo to', ipa:'/t̪/', ex:'hothat', exsc:'হঠাৎ', exen:'suddenly'},
+    {ch:'ং', name:'onushshar', ipa:'/ŋ/', ex:'rong', exsc:'রং', exen:'colour'},
+    {ch:'ঃ', name:'bishorgo', ipa:'/h/', ex:'dukkho', exsc:'দুঃখ', exen:'sorrow'},
+    {ch:'ঁ', name:'chandrabindu', ipa:'/\u0303/', ex:'chand', exsc:'চাঁদ', exen:'moon, it nasalises the vowel'},
   ],
   numerals: [
     {ch:'০', name:'shunno', ipa:'/ʃunno/', ex:'0'},
@@ -1737,9 +1720,9 @@ brishti porchhe | বৃষ্টি পড়ছে | It is raining.
 The simple present is for habits and general truths. The ending is shorter: ami kori, tumi koro, apni koren, she kore.
 
 ami roj cha khai | আমি রোজ চা খাই | I drink tea every day.
-she office e kaj kore | সে অফিসে কাজ করে | She works at an office.
+she office-e kaj kore | সে অফিসে কাজ করে | She works at an office.
 
-Here is a quirk worth knowing. The simple present in Bengali also covers the near future in casual speech, especially with a time word. So ami kal jai can mean 'I will go tomorrow'. Context and the time word carry it.
+Here is a quirk worth knowing. The simple present in Bengali also covers the near future in casual speech, especially with a time word. So for the near future Bengali uses kal jabo, or the present continuous kal jachchhi. Context and the time word carry it.
 
 A quick way to feel the difference: if you can point at it happening, use -chchhi. If it is your routine or a fact about yourself, use the plain present. Ami cha khachchhi means the cup is at my lips. Ami cha khai means tea is my daily habit.` },
   { id:'numbers-money-bajar', title:'Numbers, money, and holding your own at the bajar', summary:'Enough counting and haggling phrases to shop without getting the tourist price.', tags:'numbers · shopping',
@@ -1747,12 +1730,12 @@ A quick way to feel the difference: if you can point at it happening, use -chchh
 
 Start with the core numbers: ek (1), dui (2), tin (3), char (4), pnach (5), chhoy (6), shat (7), aat (8), noy (9), dosh (10). Then bish (20), ponchash (50), sho (100).
 
-er koto kore? | এর কত করে? | How much for this?
+eta koto kore? | এটা কত করে? | How much for this?
 ek kilo aloo koto? | এক কিলো আলু কত? | How much is a kilo of potatoes?
 
-The magic haggling verb is kama, to reduce. And beshi means 'too much', while daam means 'price'.
+The haggling verb is komano, to bring down: komao to a peer, koman to an elder. And beshi means 'too much', while daam means 'price'.
 
-daam ta beshi, ektu komao | দাম টা বেশি, একটু কমাও | The price is high, bring it down a bit.
+daam-ta beshi, ektu komao | দামটা বেশি, একটু কমাও | The price is high, bring it down a bit.
 ponchash takay debe? | পঞ্চাশ টাকায় দেবে? | Will you give it for fifty taka?
 thik achhe, dao | ঠিক আছে, দাও | Okay, give it.
 
@@ -1763,9 +1746,9 @@ A soft, friendly tone works better than a hard bargain. Sellers respond well to 
 The -e or -te ending marks location or time, roughly 'in', 'at', or 'on'.
 
 ami barite achhi | আমি বাড়িতে আছি | I am at home.
-shokal e uthi | সকালে উঠি | I get up in the morning.
+shokale uthi | সকালে উঠি | I get up in the morning.
 
-The -r or -er ending marks possession, like 'of'. Amar is just ami plus -r, so 'my' is built the same way.
+The -r or -er ending marks possession, like 'of'. Both amar and amake are built on the stem ama-, which you can see inside ami.
 
 amar bondhur bari | আমার বন্ধুর বাড়ি | My friend's house.
 kolkatar rasta | কলকাতার রাস্তা | The streets of Kolkata.
@@ -1788,7 +1771,7 @@ tumi keno ashoni? | তুমি কেন আসোনি? | Why did you not co
 Now the part that trips people up. The word ki does double duty. With a long ee sound it means 'what'. But there is also a short ki that turns a statement into a yes or no question, working like a spoken question mark.
 
 tumi ki bangla jano? | তুমি কি বাংলা জানো? | Do you know Bengali?
-cha ki tairi? | চা কি তৈরি? | Is the tea ready?
+cha ki toiri? | চা কি তৈরি? | Is the tea ready?
 
 In writing the two are spelled slightly differently (কী for 'what', কি for the yes or no marker), but in speech you tell them apart by what follows. In fast Kolkata speech people often drop the yes or no ki entirely and let their tone do the asking.` },
   { id:'family-address-terms', title:'Family words and how to address people you meet', summary:'Bengalis use kinship terms for nearly everyone, so knowing them makes you instantly warmer.', tags:'family · culture',
@@ -1889,7 +1872,7 @@ The other apps could probably get me a decent score on a Bengali quiz. None of t
 /* --- DIALOGUE SCRIPTS (per chapter, "in the scene") ----------------------- */
 const DIALOGUES = {
   "d1": [
-    {"who":"Sourav","r":"Aaj theke amader modhye shudhu Bangla, bujhli? Ekta English shobdo-o na.","sc":"আজ থেকে আমাদের মধ্যে শুধু বাংলা, বুঝলি? একটা ইংরেজি শব্দও না।","en":"From today, only Bengali between us, got it? Not one English word."},
+    {"who":"Sourav","r":"Aaj theke amader modhye shudhu Bangla, bujhli? Ekta ingreji shobdo-o na.","sc":"আজ থেকে আমাদের মধ্যে শুধু বাংলা, বুঝলি? একটা ইংরেজি শব্দও না।","en":"From today, only Bengali between us, got it? Not one English word."},
     {"who":"Kabir","r":"Thik ache, thik ache. Cheshta korchi.","sc":"ঠিক আছে, ঠিক আছে। চেষ্টা করছি।","en":"Okay, okay. I'm trying."},
     {"who":"Sourav","r":"Toh bol dekhi, tor naam ki?","sc":"তো বল দেখি, তোর নাম কী?","en":"So go on, what's your name?"},
     {"who":"Kabir","r":"Ami Kabir. Amar naam Kabir, tui toh jaanish!","sc":"আমি কবির। আমার নাম কবির, তুই তো জানিস!","en":"I'm Kabir. My name is Kabir, you know that!"},
@@ -1920,7 +1903,7 @@ const DIALOGUES = {
     {"who":"Joy","r":"Ki re Kabir, ki khobor?","sc":"কী রে কবির, কী খবর?","en":"Hey Kabir, what's up?"},
     {"who":"Kabir","r":"Ei toh, ekrokom achi. Saradin kaaj, matha gorom.","sc":"এই তো, একরকম আছি। সারাদিন কাজ, মাথা গরম।","en":"Eh, so-so. Work all day, head's fried."},
     {"who":"Joy","r":"Amaro tai. Kal ami 'dhonnobaad' bolte giye 'dhondho' bole phelechilam!","sc":"আমারও তাই। কাল আমি 'ধন্যবাদ' বলতে গিয়ে 'ধন্ধ' বলে ফেলেছিলাম!","en":"Me too. Yesterday I meant to say 'dhonnobaad' and said 'dhondho' instead!"},
-    {"who":"Kabir","r":"Ha ha, tui toh amar theke ek step piechhiye achhish sob shomoy.","sc":"হা হা, তুই তো আমার থেকে এক স্টেপ পিছিয়ে আছিস সব সময়।","en":"Ha ha, you're always one step behind me."},
+    {"who":"Kabir","r":"Ha ha, tui toh amar theke ek step pichhiye achhish sob shomoy.","sc":"হা হা, তুই তো আমার থেকে এক স্টেপ পিছিয়ে আছিস সব সময়।","en":"Ha ha, you're always one step behind me."},
     {"who":"Joy","r":"Ta thik. Achha, ami ashi tahole, bus dhorte hobe.","sc":"তা ঠিক। আচ্ছা, আমি আসি তাহলে, বাস ধরতে হবে।","en":"True. Okay, I'm off then, got to catch the bus."},
     {"who":"Kabir","r":"Achha ja. Dekha hobe kal.","sc":"আচ্ছা যা। দেখা হবে কাল।","en":"Okay, go. See you tomorrow."}
   ],
@@ -1935,11 +1918,11 @@ const DIALOGUES = {
     {"who":"Kabir","r":"Ei nin. Thik ache toh?","sc":"এই নিন। ঠিক আছে তো?","en":"Here you are. That's fine, right?"}
   ],
   "d9": [
-    {"who":"Prabir Babu","r":"Toh, aapni notun bhaŗate. Aage kothay thaken?","sc":"তো, আপনি নতুন ভাড়াটে। আগে কোথায় থাকেন?","en":"So, you're the new tenant. Where did you live before?"},
+    {"who":"Prabir Babu","r":"Toh, aapni notun bhaŗate. Aage kothay thakten?","sc":"তো, আপনি নতুন ভাড়াটে। আগে কোথায় থাকতেন?","en":"So, you're the new tenant. Where did you live before?"},
     {"who":"Kabir","r":"Aage Dilli-te chhilam. Ekhon ami Kolkatay thaki.","sc":"আগে দিল্লিতে ছিলাম। এখন আমি কলকাতায় থাকি।","en":"I was in Delhi before. Now I live in Kolkata."},
     {"who":"Prabir Babu","r":"Achha. Beshidin thakben toh?","sc":"আচ্ছা। বেশিদিন থাকবেন তো?","en":"I see. You'll stay a while, yes?"},
     {"who":"Kabir","r":"Ha, bochor-khanek toh botei.","sc":"হ্যাঁ, বছরখানেক তো বটেই।","en":"Yes, at least a year for sure."},
-    {"who":"Prabir Babu","r":"Ei lane diye soja jaben, tarpor daan dike. Oi holud gate-er badi-i amar.","sc":"এই গলি দিয়ে সোজা যাবেন, তারপর ডান দিকে। ওই হলুদ গেটের বাড়িই আমার।","en":"Go straight down this lane, then to the right. The house with the yellow gate is mine."},
+    {"who":"Prabir Babu","r":"Ei goli diye soja jaben, tarpor daan dike. Oi holud gate-er badi-i amar.","sc":"এই গলি দিয়ে সোজা যাবেন, তারপর ডান দিকে। ওই হলুদ গেটের বাড়িই আমার।","en":"Go straight down this lane, then to the right. The house with the yellow gate is mine."},
     {"who":"Kabir","r":"Soja, tarpor daan dike. Bujhechi.","sc":"সোজা, তারপর ডান দিকে। বুঝেছি।","en":"Straight, then right. Got it."}
   ],
   "d11": [
@@ -1971,7 +1954,7 @@ const DIALOGUES = {
   ],
   "d18": [
     {"who":"Piyali","r":"Ei Kabir, cha khabe? Ki korcho ekhane danŗiye?","sc":"এই কবির, চা খাবে? কী করছ এখানে দাঁড়িয়ে?","en":"Hey Kabir, want tea? What are you doing standing here?"},
-    {"who":"Kabir","r":"Cha-r jonno eshechilam. Ami kaaj korchi saradin, matha dhoreche.","sc":"চায়ের জন্য এসেছিলাম। আমি কাজ করছি সারাদিন, মাথা ধরেছে।","en":"Just came for tea. I've been working all day, got a headache."},
+    {"who":"Kabir","r":"Cha-yer jonno eshechilam. Ami kaaj korchi saradin, matha dhoreche.","sc":"চায়ের জন্য এসেছিলাম। আমি কাজ করছি সারাদিন, মাথা ধরেছে।","en":"Just came for tea. I've been working all day, got a headache."},
     {"who":"Piyali","r":"Same here. Oi report-ta niye boshe achi, boring puro.","sc":"সেম হিয়ার। ওই রিপোর্টটা নিয়ে বসে আছি, বোরিং পুরো।","en":"Same here. Stuck on that report, totally boring."},
     {"who":"Kabir","r":"Tomar kal-ke-r presentation-ta darun chilo. Amar bhalo legeche.","sc":"তোমার কালকের প্রেজেন্টেশনটা দারুণ ছিল। আমার ভালো লেগেছে।","en":"Your presentation yesterday was great. I liked it."},
     {"who":"Piyali","r":"Sotti? Tension-e chilam.","sc":"সত্যি? টেনশনে ছিলাম।","en":"Really? I was so nervous."},
@@ -1989,7 +1972,7 @@ const DIALOGUES = {
   "d24": [
     {"who":"Kartik-da","r":"Aashun, aashun, boshun. Ki lagbe bolun?","sc":"আসুন, আসুন, বসুন। কী লাগবে বলুন?","en":"Come, come, sit. What'll you have?"},
     {"who":"Kabir","r":"Ek plate luchi din. Sathe torkari.","sc":"এক প্লেট লুচি দিন। সাথে তরকারি।","en":"Give one plate of luchi. With the curry."},
-    {"who":"Kartik-da","r":"Ekdom gorom nabche. Ar kichhu? Cha?","sc":"একদম গরম নাবছে। আর কিছু? চা?","en":"Coming down piping hot. Anything else? Tea?"},
+    {"who":"Kartik-da","r":"Ekdom gorom namche. Ar kichhu? Cha?","sc":"একদম গরম নামছে। আর কিছু? চা?","en":"Coming down piping hot. Anything else? Tea?"},
     {"who":"Kabir","r":"Ha, amar cha chai. Ek cup.","sc":"হ্যাঁ, আমার চা চাই। এক কাপ।","en":"Yes, I want tea. One cup."},
     {"who":"Kabir","r":"Bah, darun phulechhe. Osadharon. Koto holo?","sc":"বাহ, দারুণ ফুলেছে। অসাধারণ। কত হলো?","en":"Look how puffed up! Wonderful. How much is it?"},
     {"who":"Kartik-da","r":"Luchi ar cha, sob miliye pochish taka.","sc":"লুচি আর চা, সব মিলিয়ে পঁচিশ টাকা।","en":"Luchi and tea, twenty-five altogether."},
@@ -2019,7 +2002,7 @@ const DIALOGUES = {
     {"who":"Bishu-da","r":"Dada, ei brishti-te berolen? Uthe poŗun taratari!","sc":"দাদা, এই বৃষ্টিতে বেরোলেন? উঠে পড়ুন তাড়াতাড়ি!","en":"Dada, you went out in this rain? Get in quickly!"},
     {"who":"Kabir","r":"Uff, brishti porche toh thamchei na. Puro rasta jol.","sc":"উফ, বৃষ্টি পড়ছে তো থামছেই না। পুরো রাস্তা জল।","en":"Ugh, the rain just won't stop. The whole road's under water."},
     {"who":"Bishu-da","r":"Boshun, chhata-ta gutiye nin. Kothay jaben?","sc":"বসুন, ছাতাটা গুটিয়ে নিন। কোথায় যাবেন?","en":"Sit, fold your umbrella. Where will you go?"},
-    {"who":"Kabir","r":"Ami bari jabo, Bishu-da. Rashbehari, oi lane-ta.","sc":"আমি বাড়ি যাবো, বিশু-দা। রাসবিহারী, ওই গলিটা।","en":"I'll go home, Bishu-da. Rashbehari, that lane."},
+    {"who":"Kabir","r":"Ami bari jabo, Bishu-da. Rashbehari, oi goli-ta.","sc":"আমি বাড়ি যাবো, বিশু-দা। রাসবিহারী, ওই গলিটা।","en":"I'll go home, Bishu-da. Rashbehari, that lane."},
     {"who":"Kabir","r":"Isss, ei jam-e amar matha ghurche.","sc":"ইস, এই জ্যামে আমার মাথা ঘুরছে।","en":"Ugh, this jam is making my head spin."},
     {"who":"Bishu-da","r":"Janla-ta ektu khulun, hawa lagbe. Sob thikthak toh?","sc":"জানলাটা একটু খুলুন, হাওয়া লাগবে। সব ঠিকঠাক তো?","en":"Open the window a little, get some air. Everything all right?"},
     {"who":"Kabir","r":"Ha, ekhon thik lagche. Aste aste cholun, tara nei.","sc":"হ্যাঁ, এখন ঠিক লাগছে। আস্তে আস্তে চলুন, তাড়া নেই।","en":"Yes, feeling okay now. Drive slowly, there's no hurry."}
@@ -2044,7 +2027,7 @@ const DIALOGUES = {
     {"who":"Sourav","r":"Chol dekhi, ready toh? Thakuma jodi bole 'kemon achho', ki bolbi?","sc":"চল দেখি, রেডি তো? ঠাকুমা যদি বলে 'কেমন আছ', কী বলবি?","en":"Come on, ready? If Thakuma says 'how are you', what'll you say?"},
     {"who":"Kabir","r":"Bhalo achi, Thakuma. Ekdom bhalo achi.","sc":"ভালো আছি, ঠাকুমা। একদম ভালো আছি।","en":"I'm well, Thakuma. Perfectly well."},
     {"who":"Sourav","r":"Bah. 'Ki koro?' bolle?","sc":"বাহ। 'কী করো?' বললে?","en":"Good. If she says 'what do you do'?"},
-    {"who":"Kabir","r":"Ami kaaj korchi, ekta office-e.","sc":"আমি কাজ করছি, একটা অফিসে।","en":"I'm working, at an office."},
+    {"who":"Kabir","r":"Ami ekta office-e kaaj kori.","sc":"আমি একটা অফিসে কাজ করি।","en":"I work at an office."},
     {"who":"Sourav","r":"Ranna niye jiggesh korle, bhalo legeche kina?","sc":"রান্না নিয়ে জিজ্ঞেস করলে, ভালো লেগেছে কিনা?","en":"If she asks about the food, whether you liked it?"},
     {"who":"Kabir","r":"Bolbo, khub bhalo legeche, osadharon ranna.","sc":"বলবো, খুব ভালো লেগেছে, অসাধারণ রান্না।","en":"I'll say, I liked it very much, wonderful cooking."},
     {"who":"Sourav","r":"Ekdom thik ache. Ready tui.","sc":"একদম ঠিক আছে। রেডি তুই।","en":"Perfect. You're ready."}
