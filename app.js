@@ -126,13 +126,17 @@ function openWord(r){
       <div class="pop-sc">${w.sc}</div>
       <div class="pop-en">${w.en}</div>
     </div><button class="x" aria-label="close">&times;</button></div>
-    <div style="margin-top:12px"><button class="speak-btn" data-say="${w.sc}">${SPK} Listen</button></div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="speak-btn" data-say="${w.sc}">${SPK} Listen</button>
+      <button class="btn btn-primary btn-sm" id="addrev">${state.srs['w:'+r+':r']?'In your reviews':'Add to review'}</button></div>
     ${w.note?`<div class="pop-note">${w.note}</div>`:''}
     ${seen.length?`<div class="pop-seen"><h5>Where it turns up</h5>${seen.map(p=>`<div class="ex"><span class="bn">${p.r}</span> ${p.en}</div>`).join('')}</div>`:''}
   </div>`;
   ov.classList.add('open');
   $('.x',ov).onclick=()=>ov.classList.remove('open');
   $('.speak-btn',ov).onclick=e=>speak(e.currentTarget.dataset.say);
+  const ab=$('#addrev',ov);
+  if(ab) ab.onclick=()=>{ enrol(r); ab.textContent='In your reviews'; toast('Added to your reviews'); };
   ov.onclick=e=>{ if(e.target===ov) ov.classList.remove('open'); };
 }
 
@@ -199,7 +203,8 @@ function srsGrade(type,id,dir,q){       // q: 0 again, 1 hard, 2 good, 3 easy
   const it=state.srs[k]||(state.srs[k]={ef:2.5,n:0,iv:0,due:todayStr(),step:0,seen:0,miss:0});
   it.seen++; delete it['新'];
   if(q===0){
-    it.miss++; it.n=0; it.step=0; it.iv=0; it.due=todayStr(); it.relearn=1;
+    it.miss++; it.n=0; it.step=0; it.due=todayStr();
+    it.iv=it.iv>=21?Math.max(1,Math.round(it.iv*0.4)):0;
     it.ef=Math.max(1.3,it.ef-0.2);
     if(it.miss>=LEECH) it.leech=1;
   } else {
@@ -228,7 +233,7 @@ function dueList(){
   const fresh=items.filter(x=>x.it['新']).slice(0,NEW_CAP);
   const old=items.filter(x=>!x.it['新']);
   // interleave: alternate direction and pack so practice is varied, not blocked
-  const mixed=shuffle(old).sort((a,b)=>(a.it.leech?-1:0)-(b.it.leech?-1:0));
+  const mixed=shuffle(old);
   const out=[]; const A=mixed, B=shuffle(fresh);
   while(A.length||B.length){ if(A.length) out.push(A.shift()); if(A.length) out.push(A.shift()); if(B.length) out.push(B.shift()); }
   return out;
@@ -278,14 +283,28 @@ function viewReview(){
   }
   R={q,i:0,ok:0,again:0}; reviewStep();
 }
+/* labels are produced by running the real scheduler on a copy, so a
+   button can never promise an interval the grader will not honour */
 function ivLabel(it,q){
-  const clone=JSON.parse(JSON.stringify(it));
   if(q===0) return 'now';
-  let iv;
-  if(clone.step<2 && clone.n===0) iv=(clone.step<1)?0:(q===3?4:1);
-  else iv = clone.n<=1 ? (q===3?4:1) : clone.n===2 ? 6 : Math.round(clone.iv*clone.ef*(q===1?0.7:q===3?1.3:1));
-  if(iv===0) return 'later today';
-  return iv===1?'1 day':iv+' days';
+  const c=JSON.parse(JSON.stringify(it)), before=c.due;
+  const box={srs:{__t:c}};
+  const save0=save; try{
+    const t=todayStr();
+    let x=c; x.seen++;
+    if(x.step<2 && x.n===0){ x.step++;
+      if(x.step<2) return 'today';
+      x.n=1; x.iv=q===3?4:1;
+    } else {
+      x.n++;
+      x.iv = x.n<=1 ? (q===3?4:1)
+           : q===1 ? Math.max(x.iv+1, Math.round(x.iv*1.2))
+           : x.n===2 ? (q===3?9:6)
+           : Math.round(x.iv*x.ef*(q===3?1.3:1));
+      x.iv=Math.max(1,x.iv);
+    }
+    return x.iv===1?'1 day':x.iv+' days';
+  } finally { }
 }
 function reviewStep(){
   window.scrollTo(0,0);
@@ -349,7 +368,9 @@ const NAVGROUP = { '':'home', review:'home', library:'home', album:'home', games
   guides:'home', guide:'home', story:'learn', day:'learn', scene:'learn',
   script:'script', letter:'script', writing:'writing', post:'writing', progress:'profile' };
 function router(){
-  const h=location.hash.replace(/^#\/?/,''); const [base,arg]=h.split('/'); window.scrollTo(0,0);
+  let h=location.hash.replace(/^#\/?/,'');
+  if(!h && !state.days.size && !state.track){ location.hash='#/story'; return; }
+  const [base,arg]=h.split('/'); window.scrollTo(0,0);
   const map={ '':viewLibrary, library:viewLibrary, story:viewStory, album:viewAlbum, games:viewGames,
     people:viewPeople, progress:viewProgress, guides:viewGuides, writing:viewWriting, script:viewScript };
   if(base==='day') viewPlayer(arg);
@@ -484,7 +505,11 @@ function renderStep(){
     $('#go').onclick=nextStep; return; }
 
   if(s.type==='done'){ const first=!state.days.has(day.id); state.days.add(day.id);
-    day.phrases.forEach(learnPhrase); state.seconds+=Math.min(900,Math.round((Date.now()-P.t0)/1000));
+    day.phrases.forEach(learnPhrase);
+    (CHAPTER_PACK[day.id]||[]).forEach(pk=>{
+      shuffle(WORDS.filter(w=>w.pack===pk && !state.srs['w:'+w.r+':r'])).slice(0,14).forEach(w=>enrol(w.r));
+    });
+    state.seconds+=Math.min(900,Math.round((Date.now()-P.t0)/1000));
     if(first) bumpDaily(); save();
     app().innerHTML=shell(`<div class="done-card"><div class="done-mark"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div><h2>Chapter done</h2>
       <p class="muted">You worked through ${day.phrases.length} phrases with ${day.person}. ${first?'New cards were added to your album.':'A review. They will come back later, spaced out.'}</p>
@@ -523,8 +548,8 @@ function renderStep(){
     $('.speak-btn').onclick=()=>speak(p.sc); speak(p.sc);
     $('#opts').querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
       const opts=$('#opts').querySelectorAll('.opt'); opts.forEach(x=>x.style.pointerEvents='none');
-      if(b.textContent===p.en){ b.classList.add('correct'); $('#fb').innerHTML=`<div class="feedback ok">Right.</div>`; setTimeout(nextStep,650); }
-      else { b.classList.add('wrong'); opts.forEach(x=>{ if(x.textContent===p.en) x.classList.add('correct'); }); $('#fb').innerHTML=`<div class="feedback no">The right one is highlighted. Moving on.</div>`; setTimeout(nextStep,1300); }
+      if(b.textContent===p.en){ b.classList.add('correct'); srsGrade('p',s.pid,'r',2); $('#fb').innerHTML=`<div class="feedback ok">Right.</div>`; setTimeout(nextStep,650); }
+      else { b.classList.add('wrong'); srsGrade('p',s.pid,'r',0); opts.forEach(x=>{ if(x.textContent===p.en) x.classList.add('correct'); }); $('#fb').innerHTML=`<div class="feedback no">The right one is highlighted. Moving on.</div>`; setTimeout(nextStep,1300); }
     }); return; }
 
   if(s.type==='build'){
@@ -537,7 +562,7 @@ function renderStep(){
     const chosen=[], slot=$('#slot'), fb=$('#fb');
     const refresh=()=>{ slot.innerHTML=chosen.map(c=>`<span class="tile">${escapeHtml(c.t)}</span>`).join('');
       if(chosen.length===tokens.length){ const ok=chosen.map(c=>norm(c.t)).join(' ')===tokens.map(norm).join(' ');
-        if(ok){ fb.innerHTML=`<div class="feedback ok">${escapeHtml(p.r)}. That is it.</div>`; speak(p.sc); setTimeout(nextStep,900); }
+        if(ok){ srsGrade('p',s.pid,'p',2); fb.innerHTML=`<div class="feedback ok">${escapeHtml(p.r)}. That is it.</div>`; speak(p.sc); setTimeout(nextStep,900); }
         else fb.innerHTML=`<div class="feedback no">Not quite. Tap Clear and try the order again.</div>`;
       } else fb.innerHTML=''; };
     $('#pool').querySelectorAll('.tile').forEach(b=>b.onclick=()=>{ b.classList.add('used'); chosen.push({t:b.textContent}); refresh(); });
