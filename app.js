@@ -62,7 +62,7 @@ function load(){
     date:s.date||today(), user:s.user||null, track:s.track||null,
     srs:s.srs||{}, streak:s.streak||{n:0,best:0,last:null,freeze:1}, daily:s.daily||{date:today(),done:0,goal:12}, hist:s.hist||{},
   };
-  if(st.date!==today()){ st.newToday=0; st.revisited=0; st.date=today(); }
+  if(st.date!==todayStr()){ st.newToday=0; st.revisited=0; st.date=todayStr(); }
   return st;
 }
 function save(){
@@ -73,10 +73,11 @@ function save(){
     srs:state.srs, streak:state.streak, daily:state.daily, hist:state.hist,
   }));
 }
-function collectWord(r){ if(r && !state.words.has(r)){ state.words.add(r); srsAdd('w',r); save(); } }
+function collectWord(r){ if(r && !state.words.has(r)){ state.words.add(r); save(); } }
+function enrol(r){ collectWord(r); srsAdd('w',r); save(); }
 function learnPhrase(id){
   if(!state.learned.has(id)){ state.learned.add(id); state.newToday++; } else state.revisited++;
-  (PHRASES[id].words||[]).forEach(collectWord); srsAdd('p',id); save();
+  (PHRASES[id].words||[]).forEach(enrol); srsAdd('p',id); save();
 }
 
 /* ---------- helpers ---------- */
@@ -85,13 +86,17 @@ const app = ()=>document.getElementById('view');
 const norm = s => s.toLowerCase().replace(/[.,?!]/g,'').trim();
 function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
 function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),1700); }
-function escapeHtml(s){ return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 /* ---------- audio ---------- */
 let bnVoice=null;
 function pickVoice(){ const vs=speechSynthesis.getVoices(); bnVoice = vs.find(v=>/bn|bengali|bangla/i.test(v.lang+v.name)) || vs.find(v=>/hi-IN|hi_IN/i.test(v.lang)) || null; }
 if('speechSynthesis' in window){ pickVoice(); speechSynthesis.onvoiceschanged=pickVoice; }
+let voiceWarned=false;
+function voiceReady(){ return !!bnVoice; }
 function speak(text){ if(!('speechSynthesis' in window)){ toast('Audio is not available in this browser'); return; }
+  if(!bnVoice && !voiceWarned){ voiceWarned=true;
+    toast('No Bengali voice on this device. Settings, Accessibility, Spoken Content, Voices.'); }
   speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.lang='bn-IN'; u.rate=.82; if(bnVoice) u.voice=bnVoice; speechSynthesis.speak(u); }
 
 /* ---------- tappable words ---------- */
@@ -102,7 +107,8 @@ function tapify(roman, keys){
     if(seen.has(k)) return; seen.add(k);
     if(!WORDS.find(x=>x.r===k)) return;
     const pat = k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/_/g,'\\s+');
-    const re = new RegExp('\\b('+pat+')\\b','i');
+    let re; try{ re=new RegExp('(?<![\\p{L}])('+pat+')(?![\\p{L}])','iu'); }
+    catch(_){ re=new RegExp('\\b('+pat+')\\b','i'); }
     html = html.replace(re, m=>`<span class="word" data-w="${k}">${m}</span>`);
   });
   return html;
@@ -203,11 +209,15 @@ function srsGrade(type,id,dir,q){       // q: 0 again, 1 hard, 2 good, 3 easy
       else { it.n=1; it.iv=q===3?4:1; it.due=addDays(it.iv); it.relearn=0; }
     } else {
       it.n++;
-      it.iv = it.n<=1 ? (q===3?4:1) : it.n===2 ? 6 : Math.round(it.iv*it.ef*(q===1?0.7:q===3?1.3:1));
+      it.iv = it.n<=1 ? (q===3?4:1)
+            : q===1 ? Math.max(it.iv+1, Math.round(it.iv*1.2))
+            : it.n===2 ? (q===3?9:6)
+            : Math.round(it.iv*it.ef*(q===3?1.3:1));
       it.iv = Math.max(1,fuzz(it.iv));
       it.due=addDays(it.iv); it.relearn=0;
     }
     it.ef=Math.min(2.8,Math.max(1.3, it.ef + (0.1-(3-q)*(0.08+(3-q)*0.02))));
+    if(it.iv>=21){ it.leech=0; it.miss=0; }
   }
   bumpDaily(); save();
 }
@@ -224,8 +234,9 @@ function dueList(){
   return out;
 }
 function dueCount(){ return dueList().length; }
-function matureCount(){ return allItems().filter(x=>x.it.iv>=21).length; }
-function knownCount(){ return allItems().filter(x=>x.it.iv>=7).length; }
+const uniq=a=>new Set(a.map(x=>x.type+':'+x.id)).size;
+function matureCount(){ return uniq(allItems().filter(x=>x.it.iv>=21)); }
+function knownCount(){ return uniq(allItems().filter(x=>x.it.iv>=7)); }
 function leeches(){ return allItems().filter(x=>x.it.leech); }
 function forecast(days){
   const out=[]; for(let i=0;i<days;i++){ const d=addDays(i);
@@ -277,11 +288,12 @@ function ivLabel(it,q){
   return iv===1?'1 day':iv+' days';
 }
 function reviewStep(){
+  window.scrollTo(0,0);
   if(R.i>=R.q.length){
-    const acc=R.q.length?Math.round(R.ok/R.q.length*100):0;
+    const tot=R.total||R.q.length; const acc=tot?Math.round(R.ok/tot*100):0;
     app().innerHTML=`<span class="crumb" onclick="location.hash='#/library'">${icon('back')} Library</span>
       <div class="done-card"><div class="done-mark">${icon('check')}</div><h2>${acc}% recalled</h2>
-      <p class="muted">${R.q.length} reviewed. What you missed returns today, what you knew moves further out.</p>
+      <p class="muted">${tot} reviewed. What you missed returns today, what you knew moves further out.</p>
       <div class="stat-row" style="margin-top:20px">
         <div class="stat"><div class="big">${state.streak.n}</div><div class="lbl">Day streak</div></div>
         <div class="stat"><div class="big">${state.daily.done}</div><div class="lbl">Today</div></div>
@@ -325,7 +337,9 @@ function reviewStep(){
       <button class="grade g-easy"  data-q="3">Easy<small>${ivLabel(item.it,3)}</small></button>`;
     $('#acts').querySelectorAll('.grade').forEach(b=>b.onclick=()=>{
       const q=+b.dataset.q; srsGrade(item.type,item.id,item.dir,q);
-      if(q===0){ R.again++; R.q.push(item); } else R.ok++;
+      if(!item._seen){ item._seen=1; R.total=(R.total||0)+1; if(q>0) R.ok++; }
+      if(q===0){ item._again=(item._again||0)+1;
+        if(item._again<=2) R.q.splice(Math.min(R.i+4,R.q.length),0,item); }
       R.i++; reviewStep();
     });
   };
@@ -393,6 +407,7 @@ function viewLibrary(){
     </div>
     <div class="shelf-grid">${shelves.map(s=>`<button class="shelf" onclick="location.hash='${s.go}'">
       <span class="ico">${icon(s.ic)}</span><h3>${s.t}</h3><p>${s.p}</p>${s.c?`<span class="count">${s.c}</span>`:''}</button>`).join('')}</div>`;
+  if($('#startrev')) $('#startrev').onclick=()=>{ location.hash='#/review'; };
 }
 
 /* what you can do after each unit, the reason to keep going */
@@ -455,6 +470,7 @@ function viewPlayer(id){ const day=DAYS.find(d=>d.id===id); if(!day) return view
 function pct(){ return Math.round(P.i/(P.steps.length-1)*100); }
 function nextStep(){ P.i++; renderStep(); wireSay(app()); }
 function renderStep(){
+  window.scrollTo(0,0);
   const s=P.steps[P.i], day=P.day;
   const shell=inner=>`<span class="crumb" onclick="location.hash='#/story'">All chapters</span>
     <div class="scene ${day.milestone?'scene-gold':''}"><div class="where">Day ${day.day}. ${day.place}</div><h2>${day.title}</h2></div>
@@ -468,7 +484,8 @@ function renderStep(){
     $('#go').onclick=nextStep; return; }
 
   if(s.type==='done'){ const first=!state.days.has(day.id); state.days.add(day.id);
-    day.phrases.forEach(learnPhrase); state.seconds+=Math.min(900,Math.round((Date.now()-P.t0)/1000)); save();
+    day.phrases.forEach(learnPhrase); state.seconds+=Math.min(900,Math.round((Date.now()-P.t0)/1000));
+    if(first) bumpDaily(); save();
     app().innerHTML=shell(`<div class="done-card"><div class="done-mark"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div><h2>Chapter done</h2>
       <p class="muted">You worked through ${day.phrases.length} phrases with ${day.person}. ${first?'New cards were added to your album.':'A review. They will come back later, spaced out.'}</p>
       <div class="player-actions" style="justify-content:center;margin-top:20px">
@@ -498,7 +515,7 @@ function renderStep(){
     $('.speak-btn').onclick=()=>speak(p.sc); $('#go').onclick=nextStep; speak(p.sc); return; }
 
   if(s.type==='recognize'){
-    const opts=shuffle([p.en, ...shuffle(Object.values(PHRASES).filter(x=>x.en!==p.en)).slice(0,3).map(x=>PZ(x.en))]);
+    const opts=shuffle([p.en, ...shuffle(Object.values(PHRASES).map(x=>PZ(x.en)).filter(e=>e!==p.en)).slice(0,3)]);
     app().innerHTML=shell(`<div class="rung-label"><span class="pip"></span>What did that mean?</div>
       <div class="q-roman">${escapeHtml(p.r)}</div>
       <button class="speak-btn" data-say="${p.sc}">${SPK} Listen again</button>
@@ -629,7 +646,8 @@ function mcqGame(cfg){ let idx=0,score=0; const n=cfg.rounds||6;
 }
 const wOpt=(w,ok)=>({html:`${w.r} <span class="script">${w.sc}</span> <span class="muted">${w.en}</span>`,ok});
 const enOpt=(w,ok)=>({html:escapeHtml(w.en),ok});
-function distract(w,key){ const P=pool(); const src=P.length>=8?P:WORDS; return shuffle(src.filter(x=>x[key]!==w[key])).slice(0,3); }
+function distract(w,key){ const P=pool(); const src=P.length>=8?P:WORDS;
+  return shuffle(src.filter(x=>x.r!==w.r && x.en!==w.en)).slice(0,3); }
 function gOpposites(){ mcqGame({title:'Opposites Sprint',sub:'What is the opposite of',make:()=>{
   const pair=pick(OPPOSITES); const [a,b]=shuffle(pair.slice()); const wA=W(a),wB=W(b);
   const options=shuffle([wOpt(wB,true),...shuffle(WORDS.filter(w=>w.r!==a&&w.r!==b)).slice(0,3).map(w=>wOpt(w,false))]);
@@ -687,7 +705,7 @@ function viewGuideDetail(id){ const g=GUIDES.find(x=>x.id===id); if(!g) return v
   app().innerHTML=`<span class="crumb" onclick="location.hash='#/guides'">All guides</span>
     <article class="prose"><span class="tags" style="color:var(--teal-700);font-weight:800">${escapeHtml(g.tags)}</span>
       <h1>${escapeHtml(g.title)}</h1><p class="lead" style="margin:8px 0 22px">${escapeHtml(g.summary)}</p>${renderProse(g.body)}</article>
-    <div class="prose-nav">${GUIDES.map(x=>`<button class="mini-link ${x.id===id?'cur':''}" onclick="location.hash='#/guide/${x.id}'">${escapeHtml(x.title)}</button>`).join('')}</div>`; }
+    <div class="prose-nav">${GUIDES.filter(x=>x.id!==id).map(x=>`<button class="mini-link" onclick="location.hash='#/guide/${x.id}'">${escapeHtml(x.title)}</button>`).join('')}</div>`; }
 
 /* ---------- writing / blog ---------- */
 function viewWriting(){ app().innerHTML=`<span class="crumb" onclick="location.hash='#/library'">Back to library</span>
@@ -786,7 +804,7 @@ function initTrace(ch,matra){
     ix.clearRect(0,0,S,S); used=false; const el=$('#score'); if(el){el.textContent='';el.className='trace-score';}
   }
   paintMask(); bg();
-  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>{ if(document.body.contains(cv)){ paintMask(); bg(); } });
+  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>{ if(document.body.contains(cv)&&!used){ paintMask(); bg(); } });
   let drawing=false;
   const pos=e=>{ const r=cv.getBoundingClientRect(); return [(e.clientX-r.left)*(S/r.width),(e.clientY-r.top)*(S/r.height)]; };
   cv.addEventListener('pointerdown',e=>{ drawing=true; used=true; try{cv.setPointerCapture(e.pointerId);}catch(_){}
@@ -795,7 +813,7 @@ function initTrace(ch,matra){
   cv.addEventListener('pointermove',e=>{ if(!drawing) return; const [x,y]=pos(e);
     ctx.lineTo(x,y); ctx.stroke(); ix.lineTo(x,y); ix.stroke(); e.preventDefault(); });
   const stop=e=>{ drawing=false; try{cv.releasePointerCapture(e.pointerId);}catch(_){} };
-  ['pointerup','pointercancel','pointerleave'].forEach(t=>cv.addEventListener(t,stop));
+  ['pointerup','pointercancel'].forEach(t=>cv.addEventListener(t,stop));
   $('#clr').onclick=bg;
   $('#check').onclick=()=>{
     const el=$('#score');

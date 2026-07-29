@@ -629,3 +629,15 @@ details.howto ol{margin-top:10px}
 .continue-card .cc-sub{font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.85}
 .continue-card h3{color:var(--on-accent);font-size:1.3rem;margin-top:2px}
 .continue-card .btn{background:var(--surface);color:var(--text)}
+
+/* ---- audit fixes ---- */
+.milestone-banner{display:inline-block;background:var(--v-500);color:#fff;border:2px solid var(--line);
+  border-radius:var(--radius-pill);padding:.35em 1em;font-weight:700;font-size:.8rem;margin-bottom:14px;box-shadow:var(--pop-2)}
+.popover{max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.grade{min-height:58px;justify-content:center}
+.grade small{font-size:.64rem;white-space:nowrap}
+@media (pointer:coarse){
+  .crumb{min-height:44px;display:inline-flex;align-items:center}
+  .mini-link{min-height:36px;display:inline-flex;align-items:center}
+}
+html{scroll-behavior:auto}

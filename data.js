@@ -35,6 +35,14 @@ const PACKS = [
   { id:'things',   name:'Clothes & things' },
   { id:'nature',   name:'Nature & weather' },
   { id:'social',   name:'Conversation & social' },
+  { id:'tech',    name:'Technology' },
+  { id:'trip',    name:'Travel & measures' },
+  { id:'ideas',   name:'Ideas & feelings' },
+  { id:'society', name:'Society & money' },
+  { id:'idiom',   name:'Idioms' },
+  { id:'phrases', name:'Useful phrases' },
+  { id:'arts',    name:'Music, books & film' },
+  { id:'leisure', name:'Sport & leisure' },
 ];
 
 /* --- WORDS ---------------------------------------------------------------- */
