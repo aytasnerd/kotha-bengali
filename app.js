@@ -440,7 +440,8 @@ const UNIT_CANDO={
  u5:'sit at her parents table and stay in Bengali',
  u6:'handle the city alone, and face Thakuma',
 };
-function nextChapter(){ return DAYS.find(d=>!state.days.has(d.id)); }
+function trackDays(){ const t=state.track||'kabir'; const f=DAYS.filter(d=>(d.tr||'kabir')===t); return f.length?f:DAYS.filter(d=>(d.tr||'kabir')==='kabir'); }
+function nextChapter(){ return trackDays().find(d=>!state.days.has(d.id)); }
 function chooseStory(){ state.track=null; save(); router(); }
 function viewTrackChooser(){
   app().innerHTML=`<span class="crumb" onclick="location.hash='#/library'">${icon('back')} Library</span>
@@ -453,9 +454,10 @@ function viewTrackChooser(){
 function viewStory(){
   if(!state.track) return viewTrackChooser();
   const t=getTrack(), nx=nextChapter();
-  const done=DAYS.filter(d=>state.days.has(d.id)).length;
+  const done=trackDays().filter(d=>state.days.has(d.id)).length;
+  const TD=trackDays();
   const sections=UNITS.map(u=>{
-    const days=DAYS.filter(d=>d.unit===u.id); if(!days.length) return '';
+    const days=TD.filter(d=>d.unit===u.id); if(!days.length) return '';
     const ud=days.filter(d=>state.days.has(d.id)).length;
     const nodes=days.map(d=>{
       const isDone=state.days.has(d.id), isNext=nx&&nx.id===d.id;
@@ -475,7 +477,7 @@ function viewStory(){
           <div style="opacity:.9;font-size:.9rem">${escapeHtml(nx.place)}. With ${escapeHtml(nx.person)}.</div></div>
         <button class="btn" onclick="location.hash='#/day/${nx.id}'">Continue</button></div>`
       :`<div class="continue-card"><div><div class="cc-sub">The whole story</div><h3>You finished it</h3></div></div>`}
-    <div class="track-strip"><span>Playing as <b>${escapeHtml(t.name)}</b>. ${done} of ${DAYS.length} chapters done.</span>
+    <div class="track-strip"><span>Playing as <b>${escapeHtml(t.name)}</b>. ${done} of ${trackDays().length} chapters done.</span>
       <button class="mini-link" onclick="chooseStory()">Change story</button></div>
     ${sections}`;
 }
@@ -501,6 +503,7 @@ function renderStep(){
     app().innerHTML=shell(`${day.milestone?'<div class="milestone-banner">Milestone chapter</div>':''}
       <div class="rung-label"><span class="pip"></span>The scene</div>
       ${paras.map(p=>`<p style="font-size:1.1rem;color:var(--text-body);margin-bottom:16px">${escapeHtml(PZ(p))}</p>`).join('')}
+      ${day.source?`<div class="src-note">From <b>${escapeHtml(day.source)}</b> by Rabindranath Tagore. This chapter is an original scene written for learners, set in that story.</div>`:''}
       <div class="player-actions"><button class="btn btn-teal" id="go">Start the scene</button></div>`);
     $('#go').onclick=nextStep; return; }
 
@@ -776,10 +779,11 @@ function viewLetter(gi){ const x=SCRIPT_ALL[gi]; if(!x) return viewScript();
     <div class="trace-wrap">
       <canvas id="trace" width="320" height="320"></canvas>
       <div id="score" class="trace-score"></div>
+      <div id="shint" class="stroke-hint"></div>
       <div class="trace-actions">
         <button class="btn btn-ghost btn-sm" id="prev">${icon('back')} Prev</button>
+        <button class="btn btn-teal btn-sm" id="animate">Show me</button>
         <button class="btn btn-ghost btn-sm" id="clr">Clear</button>
-        <button class="btn btn-teal btn-sm" id="check">Check stroke</button>
         <button class="btn btn-primary btn-sm" id="next">Next ${icon('back','flip')}</button>
       </div>
     </div>
@@ -806,63 +810,97 @@ function drawGlyph(ctx,ch,S,size){
   const w=l+r, h=asc+dsc;
   ctx.fillText(ch,(S-w)/2+l,(S-h)/2+asc);
 }
+/* ---------- stroke animation + tracing ----------
+   Where STROKES has real data for a letter we animate it being written,
+   stroke by stroke, matra last, and check the learner stroke by stroke.
+   Where we have no data we say so and offer free practice instead. */
+function strokeData(ch){ return (typeof STROKES!=='undefined' && STROKES[ch]) || null; }
+function pathPoints(d,S,n){
+  const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+  p.setAttribute('d',d);
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.style.position='absolute'; svg.style.opacity='0'; svg.setAttribute('viewBox','0 0 100 100');
+  svg.appendChild(p); document.body.appendChild(svg);
+  const len=p.getTotalLength(); const out=[];
+  for(let i=0;i<=n;i++){ const q=p.getPointAtLength(len*i/n); out.push([q.x*S/100,q.y*S/100]); }
+  svg.remove(); return out;
+}
 function initTrace(ch,matra){
   const cv=$('#trace'); if(!cv) return;
   const ctx=cv.getContext('2d',{willReadFrequently:true});
-  const ghost=cssColor('--accent','#3b4ee6'), strokeC=cssColor('--t-600','#0f736d');
+  const ghost=cssColor('--accent','#3b4ee6'), strokeC=cssColor('--t-600','#0f736d'), guide=cssColor('--v-500','#7c5ce0');
   const S=320, dpr=Math.min(window.devicePixelRatio||1,3);
   cv.width=S*dpr; cv.height=S*dpr; ctx.scale(dpr,dpr);
-  const mask=document.createElement('canvas'); mask.width=mask.height=S;
-  const mx=mask.getContext('2d',{willReadFrequently:true});
-  const paintMask=()=>{ mx.clearRect(0,0,S,S); mx.fillStyle='#000'; drawGlyph(mx,ch,S,210); };
-  const ink=document.createElement('canvas'); ink.width=ink.height=S;
-  const ix=ink.getContext('2d',{willReadFrequently:true});
-  ix.lineWidth=9; ix.lineCap='round'; ix.lineJoin='round'; ix.strokeStyle='#000';
-  let used=false;
-  function bg(){
+  const data=strokeData(ch);
+  const paths=data?data.strokes.map(st=>pathPoints(st.d,S,120)):null;
+  let step=0, used=false, anim=null;
+  const el=()=>$('#score');
+  function ghostLetter(){
     ctx.clearRect(0,0,S,S);
-    ctx.save(); ctx.globalAlpha=.16; ctx.fillStyle=ghost; drawGlyph(ctx,ch,S,210);
-    if(matra){ ctx.globalAlpha=.35; ctx.strokeStyle=strokeC; ctx.lineWidth=2; ctx.setLineDash([5,5]);
-      ctx.beginPath(); ctx.moveTo(46,58); ctx.lineTo(274,58); ctx.stroke(); ctx.setLineDash([]); }
-    ctx.restore();
-    ctx.strokeStyle=strokeC; ctx.lineWidth=9; ctx.lineCap='round'; ctx.lineJoin='round';
-    ix.clearRect(0,0,S,S); used=false; const el=$('#score'); if(el){el.textContent='';el.className='trace-score';}
+    ctx.save(); ctx.globalAlpha=.14; ctx.fillStyle=ghost; drawGlyph(ctx,ch,S,210); ctx.restore();
   }
-  paintMask(); bg();
-  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>{ if(document.body.contains(cv)&&!used){ paintMask(); bg(); } });
-  let drawing=false;
+  function drawDone(upto){
+    ctx.save(); ctx.strokeStyle=strokeC; ctx.lineWidth=9; ctx.lineCap='round'; ctx.lineJoin='round';
+    for(let i=0;i<upto;i++){ const pts=paths[i]; ctx.beginPath(); pts.forEach((q,j)=>j?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1])); ctx.stroke(); }
+    ctx.restore();
+  }
+  function frameHint(){
+    if(!data) return;
+    const h=$('#shint'); if(!h) return;
+    h.textContent = step<paths.length ? `Stroke ${step+1} of ${paths.length}. ${data.strokes[step].hint}` : 'All strokes done. Clear to try again.';
+  }
+  function bg(){ ghostLetter(); if(paths) drawDone(step); used=false; if(el()){el().textContent='';el().className='trace-score';} frameHint(); }
+  function animate(){
+    if(!paths) return;
+    if(anim) cancelAnimationFrame(anim);
+    let i=0,k=0;
+    ghostLetter();
+    (function tick(){
+      if(i>=paths.length){ step=paths.length; frameHint(); return; }
+      const pts=paths[i];
+      ctx.save(); ctx.strokeStyle=guide; ctx.lineWidth=9; ctx.lineCap='round'; ctx.lineJoin='round';
+      ctx.beginPath(); ctx.moveTo(pts[0][0],pts[0][1]);
+      for(let j=1;j<=k && j<pts.length;j++) ctx.lineTo(pts[j][0],pts[j][1]);
+      ctx.stroke(); ctx.restore();
+      k+=4;
+      if(k>=pts.length){ i++; k=0; ghostLetter(); drawDone(i); }
+      anim=requestAnimationFrame(tick);
+    })();
+  }
+  paintReady();
+  function paintReady(){ bg(); if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>{ if(document.body.contains(cv)&&!used) bg(); }); }
+
+  /* tracing, checked against the current stroke when we have data */
+  let drawing=false, cur=[];
   const pos=e=>{ const r=cv.getBoundingClientRect(); return [(e.clientX-r.left)*(S/r.width),(e.clientY-r.top)*(S/r.height)]; };
-  cv.addEventListener('pointerdown',e=>{ drawing=true; used=true; try{cv.setPointerCapture(e.pointerId);}catch(_){}
-    const [x,y]=pos(e); ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+.01,y); ctx.stroke();
-    ix.beginPath(); ix.moveTo(x,y); ix.lineTo(x+.01,y); ix.stroke(); e.preventDefault(); });
-  cv.addEventListener('pointermove',e=>{ if(!drawing) return; const [x,y]=pos(e);
-    ctx.lineTo(x,y); ctx.stroke(); ix.lineTo(x,y); ix.stroke(); e.preventDefault(); });
-  const stop=e=>{ drawing=false; try{cv.releasePointerCapture(e.pointerId);}catch(_){} };
-  ['pointerup','pointercancel'].forEach(t=>cv.addEventListener(t,stop));
-  $('#clr').onclick=bg;
-  $('#check').onclick=()=>{
-    const el=$('#score');
-    if(!used){ el.className='trace-score warn'; el.textContent='Trace over the faint letter first, then check.'; return; }
-    const G=40, cell=S/G;
-    const T=mx.getImageData(0,0,S,S).data, U=ix.getImageData(0,0,S,S).data;
-    let hit=0,tot=0,drawn=0;
-    for(let gy=0;gy<G;gy++)for(let gx=0;gx<G;gx++){
-      let t=0,u=0;
-      for(let y=Math.floor(gy*cell);y<(gy+1)*cell;y+=2)for(let x=Math.floor(gx*cell);x<(gx+1)*cell;x+=2){
-        const i=((y*S)+x)*4;
-        if(T[i+3]>60) t=1;
-        if(U[i+3]>60) u=1;
-      }
-      if(t){ tot++; if(u) hit++; }
-      if(u) drawn++;
-    }
-    const covered=tot?hit/tot:0, onTarget=drawn?hit/drawn:0;
-    const score=Math.round((covered*0.65+onTarget*0.35)*100);
-    el.className='trace-score '+(score>=75?'good':score>=50?'warn':'bad');
-    el.textContent = score>=75 ? `Nicely done. ${score} out of 100.`
-      : score>=50 ? `Close. ${score} out of 100, follow the faint shape more exactly.`
-      : `${score} out of 100. Clear it and stay on the grey letter.`;
-  };
+  cv.addEventListener('pointerdown',e=>{ drawing=true; used=true; cur=[]; try{cv.setPointerCapture(e.pointerId);}catch(_){}
+    const q=pos(e); cur.push(q); ctx.strokeStyle=strokeC; ctx.lineWidth=9; ctx.lineCap='round'; ctx.lineJoin='round';
+    ctx.beginPath(); ctx.moveTo(q[0],q[1]); ctx.lineTo(q[0]+.01,q[1]); ctx.stroke(); e.preventDefault(); });
+  cv.addEventListener('pointermove',e=>{ if(!drawing) return; const q=pos(e); cur.push(q); ctx.lineTo(q[0],q[1]); ctx.stroke(); e.preventDefault(); });
+  function finish(e){
+    if(!drawing) return; drawing=false; try{cv.releasePointerCapture(e.pointerId);}catch(_){}
+    if(!paths || step>=paths.length || cur.length<4) return;
+    const target=paths[step];
+    const near=(p,set)=>Math.min.apply(null,set.map(q=>Math.hypot(p[0]-q[0],p[1]-q[1])));
+    const cover=target.filter(t=>near(t,cur)<26).length/target.length;      // did you cover this stroke
+    const stray=cur.filter(c=>near(c,target)<30).length/cur.length;          // did you stay on it
+    const dirOk=Math.hypot(cur[0][0]-target[0][0],cur[0][1]-target[0][1])
+              < Math.hypot(cur[0][0]-target[target.length-1][0],cur[0][1]-target[target.length-1][1]);
+    const ok = cover>0.55 && stray>0.5;
+    const box=el();
+    if(ok && dirOk){ step++; ghostLetter(); drawDone(step); box.className='trace-score good';
+      box.textContent = step>=paths.length ? 'Whole letter written, in the right order.' : 'Good. Next stroke.';
+      frameHint(); }
+    else { ghostLetter(); drawDone(step); box.className='trace-score '+(ok?'warn':'bad');
+      box.textContent = !dirOk&&ok ? 'Right shape, wrong direction. Follow the arrow of the animation.'
+        : cover<=0.55 ? 'Not the whole stroke. Watch it once and try again.'
+        : 'That wandered off the stroke. Try again.'; }
+    cur=[];
+  }
+  ['pointerup','pointercancel'].forEach(t=>cv.addEventListener(t,finish));
+  const clr=$('#clr'); if(clr) clr.onclick=()=>{ step=0; bg(); };
+  const show=$('#animate'); if(show) show.onclick=()=>{ step=0; animate(); };
+  if(paths) setTimeout(animate,350);
 }
 
 /* ---------- progress ---------- */

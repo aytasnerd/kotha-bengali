@@ -641,3 +641,6 @@ details.howto ol{margin-top:10px}
   .mini-link{min-height:36px;display:inline-flex;align-items:center}
 }
 html{scroll-behavior:auto}
+.src-note{background:var(--bg-2);border:2px solid var(--line);border-radius:var(--radius);
+  padding:12px 14px;font-size:.88rem;color:var(--muted);margin:4px 0 16px}
+.stroke-hint{font-size:.86rem;font-weight:700;color:var(--bengali);margin-top:10px;min-height:1.2em}
