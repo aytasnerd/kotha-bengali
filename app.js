@@ -355,28 +355,37 @@ function viewScene(id){ const day=DAYS.find(d=>d.id===id); if(!day||!DIALOGUES[i
 }
 
 /* ---------- word browser (open library, nothing locked) ---------- */
-let albumFilter='all', albumQ='';
+let albumFilter='all', albumQ='', albumShow=120;
 function viewAlbum(){
   const filters=[{id:'all',name:'All words'}].concat(PACKS.map(p=>({id:p.id,name:p.name})));
   const q=albumQ.trim().toLowerCase();
-  const list=WORDS.filter(w=>(albumFilter==='all'||w.pack===albumFilter) &&
+  const all=WORDS.filter(w=>(albumFilter==='all'||w.pack===albumFilter) &&
     (!q || w.r.toLowerCase().includes(q) || w.en.toLowerCase().includes(q) || w.sc.includes(albumQ.trim())));
+  const sorted=all.slice().sort((x,y)=>x.r.localeCompare(y.r));
+  const list=sorted.slice(0,albumShow);
+  let cards='', letter='';
+  list.forEach(w=>{
+    const L=(w.r[0]||'').toUpperCase();
+    if(L!==letter){ letter=L; cards+=`<div class="alpha-head">${escapeHtml(letter)}</div>`; }
+    const got=state.words.has(w.r);
+    cards+=`<button class="wcard" data-w="${escapeHtml(w.r)}">${got?`<span class="lvl">${icon('check')}</span>`:''}
+      <div class="rm">${escapeHtml(w.r)}</div><div class="sc">${w.sc}</div>
+      ${w.ph?`<div class="wph">${escapeHtml(w.ph)}</div>`:''}
+      <div class="en">${escapeHtml(w.en)}</div></button>`;
+  });
   app().innerHTML=`<span class="crumb" onclick="location.hash='#/library'">${icon('back')} Library</span>
     <div class="app-head"><h1>Words <span class="sc">শব্দ</span></h1>
-      <p>The whole vocabulary, open to wander. Nothing is locked. Search in English, in romanized Bengali, or in Bangla script, then tap a word to hear it and see where it turns up.</p></div>
-    <div class="searchbar"><input id="wq" type="search" placeholder="Search: water, jol, or জল" value="${escapeHtml(albumQ)}" autocomplete="off">
-      <span class="searchcount">${list.length} of ${WORDS.length}</span></div>
+      <p>All ${WORDS.length} words, open to wander. Nothing is locked. Search in English, in romanized Bengali, or in Bangla script, then tap a word to hear it.</p></div>
+    <div class="searchbar"><input id="wq" type="search" placeholder="Search: water, jol, or জল" value="${escapeHtml(albumQ)}" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <span class="searchcount">${all.length}</span></div>
     <div class="filter-row">${filters.map(f=>`<button class="filter ${albumFilter===f.id?'active':''}" data-f="${f.id}">${escapeHtml(f.name)}</button>`).join('')}</div>
-    ${list.length?`<div class="wgrid">${list.map(w=>{ const got=state.words.has(w.r);
-      return `<button class="wcard" data-w="${w.r}">${got?`<span class="lvl">${icon('check')}</span>`:''}
-        <div class="rm">${escapeHtml(w.r)}</div><div class="sc">${w.sc}</div>
-        ${w.ph?`<div class="wph">${escapeHtml(w.ph)}</div>`:''}
-        <div class="en">${escapeHtml(w.en)}</div></button>`; }).join('')}</div>`
-      :`<p class="muted center" style="padding:30px 0">Nothing matches that. Try another spelling.</p>`}
-    <p class="muted center" style="margin-top:22px">A tick marks a word you have already met in the story.</p>`;
+    ${all.length?`<div class="wgrid">${cards}</div>
+      ${all.length>albumShow?`<button class="btn btn-ghost load-more" id="more">Show more (${all.length-albumShow} left)</button>`:''}`
+      :`<p class="muted center" style="padding:30px 0">Nothing matches that. Try another spelling.</p>`}`;
   const inp=$('#wq');
-  inp.oninput=()=>{ albumQ=inp.value; const pos=inp.selectionStart; viewAlbum(); const n=$('#wq'); n.focus(); n.setSelectionRange(pos,pos); };
-  document.querySelectorAll('.filter').forEach(b=>b.onclick=()=>{ albumFilter=b.dataset.f; viewAlbum(); });
+  inp.oninput=()=>{ albumQ=inp.value; albumShow=120; const pos=inp.selectionStart; viewAlbum(); const n=$('#wq'); n.focus(); n.setSelectionRange(pos,pos); };
+  if($('#more')) $('#more').onclick=()=>{ albumShow+=200; viewAlbum(); };
+  document.querySelectorAll('.filter').forEach(b=>b.onclick=()=>{ albumFilter=b.dataset.f; albumShow=120; viewAlbum(); });
   document.querySelectorAll('.wcard').forEach(b=>b.onclick=()=>openWord(b.dataset.w));
 }
 
@@ -528,25 +537,37 @@ function viewLetter(gi){ const x=SCRIPT_ALL[gi]; if(!x) return viewScript();
   $('#prev').onclick=()=>location.hash='#/letter/'+((gi-1+SCRIPT_ALL.length)%SCRIPT_ALL.length);
   $('#next').onclick=()=>location.hash='#/letter/'+((gi+1)%SCRIPT_ALL.length);
 }
+function cssColor(name,fallback){
+  const p=document.createElement('span'); p.style.color=`var(${name})`; p.style.display='none';
+  document.body.appendChild(p); const c=getComputedStyle(p).color; p.remove();
+  return (c && c!=='rgba(0, 0, 0, 0)') ? c : fallback;
+}
 function initTrace(ch,matra){
-  const cv=$('#trace'); if(!cv) return; const ctx=cv.getContext('2d');
-  const cs=getComputedStyle(document.documentElement);
-  const ghost=(cs.getPropertyValue('--accent')||'#3b4ee6').trim();
-  const strokeC=(cs.getPropertyValue('--t-600')||'#0f736d').trim();
-  function bg(){ ctx.clearRect(0,0,320,320); ctx.save(); ctx.globalAlpha=.15; ctx.fillStyle=ghost;
-    ctx.font='230px "Hind Siliguri", serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(ch,160,172);
-    if(matra){ ctx.globalAlpha=.35; ctx.strokeStyle=strokeC; ctx.lineWidth=2; ctx.setLineDash([6,6]);
+  const cv=$('#trace'); if(!cv) return;
+  const ctx=cv.getContext('2d');
+  const ghost=cssColor('--accent','#3b4ee6'), strokeC=cssColor('--t-600','#0f736d');
+  const S=320, dpr=Math.min(window.devicePixelRatio||1,3);
+  cv.width=S*dpr; cv.height=S*dpr; ctx.scale(dpr,dpr);
+  function bg(){
+    ctx.clearRect(0,0,S,S);
+    ctx.save(); ctx.globalAlpha=.16; ctx.fillStyle=ghost;
+    ctx.font='230px "Hind Siliguri","Noto Sans Bengali",serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(ch,160,172);
+    if(matra){ ctx.globalAlpha=.4; ctx.strokeStyle=strokeC; ctx.lineWidth=2; ctx.setLineDash([6,6]);
       ctx.beginPath(); ctx.moveTo(52,64); ctx.lineTo(268,64); ctx.stroke();
       ctx.setLineDash([]); ctx.beginPath(); ctx.moveTo(260,58); ctx.lineTo(268,64); ctx.lineTo(260,70); ctx.stroke(); }
-    ctx.restore(); }
-  bg(); ctx.strokeStyle=strokeC; ctx.lineWidth=8; ctx.lineCap='round'; ctx.lineJoin='round';
+    ctx.restore();
+    ctx.strokeStyle=strokeC; ctx.lineWidth=8; ctx.lineCap='round'; ctx.lineJoin='round';
+  }
+  bg();
+  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>{ if(document.body.contains(cv)) bg(); });
   let drawing=false;
-  const pos=e=>{ const r=cv.getBoundingClientRect(); const t=e.touches?e.touches[0]:e; return [(t.clientX-r.left)*(320/r.width),(t.clientY-r.top)*(320/r.height)]; };
-  const start=e=>{ drawing=true; const [x,y]=pos(e); ctx.beginPath(); ctx.moveTo(x,y); e.preventDefault(); };
-  const move=e=>{ if(!drawing) return; const [x,y]=pos(e); ctx.lineTo(x,y); ctx.stroke(); e.preventDefault(); };
-  const end=()=>drawing=false;
-  cv.addEventListener('mousedown',start); cv.addEventListener('mousemove',move); window.addEventListener('mouseup',end);
-  cv.addEventListener('touchstart',start,{passive:false}); cv.addEventListener('touchmove',move,{passive:false}); cv.addEventListener('touchend',end);
+  const pos=e=>{ const r=cv.getBoundingClientRect(); return [(e.clientX-r.left)*(S/r.width),(e.clientY-r.top)*(S/r.height)]; };
+  cv.addEventListener('pointerdown',e=>{ drawing=true; try{cv.setPointerCapture(e.pointerId);}catch(_){}
+    const [x,y]=pos(e); ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+.01,y); ctx.stroke(); e.preventDefault(); });
+  cv.addEventListener('pointermove',e=>{ if(!drawing) return; const [x,y]=pos(e); ctx.lineTo(x,y); ctx.stroke(); e.preventDefault(); });
+  const stop=e=>{ drawing=false; try{cv.releasePointerCapture(e.pointerId);}catch(_){} };
+  cv.addEventListener('pointerup',stop); cv.addEventListener('pointercancel',stop); cv.addEventListener('pointerleave',stop);
   $('#clr').onclick=bg;
 }
 
