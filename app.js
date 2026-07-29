@@ -402,7 +402,7 @@ function viewLibrary(){
     {ic:'dice', t:'Games',        p:'Quick rounds built from the words you have met.', c:GAMES.length+' games', go:'#/games'},
     {ic:'people',t:'People',      p:'Everyone speaks to you a little differently.', c:PEOPLE.length+' people', go:'#/people'},
     {ic:'compass',t:'Guides',     p:'Plain explanations of the parts that trip people up.', c:GUIDES.length+' guides', go:'#/guides'},
-    {ic:'feather',t:'Writing',    p:'Notes on how the chapters were built, and how to learn to speak.', c:BLOG.length+' essays', go:'#/writing'},
+    {ic:'feather',t:'Notes',      p:'Notes on how the chapters were built, and how to learn to speak.', c:BLOG.length+' essays', go:'#/writing'},
     {ic:'chart',t:'Your progress',p:'Time spent, words held, people met.', c:'', go:'#/progress'},
   ];
   rollDaily();
@@ -739,10 +739,10 @@ function viewGuideDetail(id){ const g=GUIDES.find(x=>x.id===id); if(!g) return v
 
 /* ---------- writing / blog ---------- */
 function viewWriting(){ app().innerHTML=`<span class="crumb" onclick="location.hash='#/library'">Back to library</span>
-  <div class="app-head"><h1>Writing <span class="sc">লেখা</span></h1><p>Notes from the person who wrote the chapters, on learning to speak Bengali.</p></div>
+  <div class="app-head"><h1>Notes <span class="sc">লেখা</span></h1><p>Notes from the person who wrote the chapters, on learning to speak Bengali.</p></div>
   <div class="grid">${BLOG.map(b=>`<button class="post" onclick="location.hash='#/post/${b.id}'"><h3>${escapeHtml(b.title)}</h3><p class="muted">${escapeHtml(b.deck)}</p><div class="meta">${escapeHtml(b.date)}. ${b.mins} min read</div></button>`).join('')}</div>`; }
 function viewPost(id){ const b=BLOG.find(x=>x.id===id); if(!b) return viewWriting();
-  app().innerHTML=`<span class="crumb" onclick="location.hash='#/writing'">All writing</span>
+  app().innerHTML=`<span class="crumb" onclick="location.hash='#/writing'">All notes</span>
     <article class="prose"><h1>${escapeHtml(b.title)}</h1><p class="lead" style="margin:8px 0 6px">${escapeHtml(b.deck)}</p>
       <div class="meta" style="color:var(--text-faint);font-weight:700;margin-bottom:22px">${escapeHtml(b.date)}. ${b.mins} min read</div>${renderProse(b.body)}</article>`; }
 
