@@ -2104,3 +2104,112 @@ const CHAPTER_PACK={
   d27:['market','things'], d30:['phrases'], d34:['city','nature'],
   d40:['travel'], d45:['leisure','arts'], d52:['idiom'], d60:['phrases','ideas'],
 };
+
+/* --- Tagore track phrases --- */
+Object.assign(PHRASES, {
+  tp_who:      {r:'Tumi ke go?',            sc:'তুমি কে গো?',           ph:'/t̪umi ke go/',            en:'And who are you?'},
+  tp_whatinbag:{r:'Tomar jholay ki achhe?', sc:'তোমার ঝোলায় কী আছে?',  ph:'/t̪omar dʒʱolaj ki atʃʰe/',en:"What's in your bag?"},
+  tp_dontfear: {r:'Bhoy peo na.',           sc:'ভয় পেয়ো না।',          ph:'/bʱɔj pejo na/',          en:'Do not be afraid.'},
+  tp_comeback: {r:'Abar esho kintu.',       sc:'আবার এসো কিন্তু।',      ph:'/abar eʃo kint̪u/',        en:'Do come again.'},
+  tp_teachme:  {r:'Amake ektu shikhiye din.',sc:'আমাকে একটু শিখিয়ে দিন।',ph:'/amake ækt̪u ʃikʰije d̪in/',en:'Please teach me a little.'},
+  tp_writename:{r:'Amar naam likhe din.',   sc:'আমার নাম লিখে দিন।',    ph:'/amar nam likʰe d̪in/',    en:'Write my name for me.'},
+  tp_missing:  {r:'Bari-r jonno mon kemon korchhe.',sc:'বাড়ির জন্য মন কেমন করছে।',ph:'/baɽir dʒonno mon kæmon kɔrtʃʰe/',en:'I am homesick.'},
+  tp_whenhome: {r:'Kobe bari jabo?',        sc:'কবে বাড়ি যাবো?',       ph:'/kobe baɽi dʒabo/',       en:'When will I go home?'},
+  tp_sitdown:  {r:'Esho, boso.',            sc:'এসো, বসো।',             ph:'/eʃo bɔʃo/',              en:'Come, sit down.'},
+  tp_eaten:    {r:'Kheyechho to?',          sc:'খেয়েছ তো?',            ph:'/kʰejetʃʰo t̪o/',          en:'You have eaten, I hope?'},
+  tp_stayhere: {r:'Aaj ekhane theke jao.',  sc:'আজ এখানে থেকে যাও।',    ph:'/adʒ ekʰane t̪ʰeke dʒao/', en:'Stay here today.'},
+  tp_angry:    {r:'Rag koro na.',           sc:'রাগ কোরো না।',          ph:'/rag kɔro na/',           en:'Do not be cross.'},
+});
+
+/* --- Tagore track chapters, original scenes set in his stories --- */
+DAYS.push(
+ { day:1, id:'t1', tr:'tagore', unit:'u1', title:'The fruit seller at the gate',
+   place:'A Calcutta doorway', person:'Rahamat',
+   source:'কাবুলিওয়ালা, Kabuliwala, 1892',
+   scene:["A tall man from Kabul stands at the gate with a cloth bag over his shoulder, selling dried fruit. A small girl has decided he is the most interesting thing that has ever happened, and she is asking him questions faster than he can answer.",
+          "He answers every one of them patiently. You are standing in the doorway, and he turns to you next."],
+   phrases:['tp_who','tp_whatinbag','tp_dontfear','tp_comeback'] },
+ { day:6, id:'t2', tr:'tagore', unit:'u1', title:'Letters by lamplight',
+   place:'A village post office', person:'Ratan',
+   source:'পোস্টমাস্টার, The Postmaster, 1891',
+   scene:["The post office is one room and a lamp. The girl who keeps the house has been asking to be taught her letters, and tonight she has decided the lesson is happening whether anyone planned it or not.",
+          "She writes her name badly and is delighted with it."],
+   phrases:['tp_teachme','tp_writename','tp_sitdown','tp_comeback'] },
+ { day:15, id:'t3', tr:'tagore', unit:'u2', title:'A long way from the river',
+   place:'A relative\'s house in Calcutta', person:'Phatik',
+   source:'ছুটি, Chhuti, The Homecoming, 1892',
+   scene:["A village boy has been sent to the city to be educated. He is thirteen, too big for the house and too young for the school, and he has not stopped thinking about the river he used to swim in.",
+          "He asks you the same question every day."],
+   phrases:['tp_missing','tp_whenhome','tp_angry','tp_dontfear'] },
+ { day:23, id:'t4', tr:'tagore', unit:'u3', title:'The boy who would not stay',
+   place:'A courtyard at dusk', person:'Tarapada',
+   source:'অতিথি, Atithi, The Runaway, 1895',
+   scene:["A wandering boy has been fed, praised and half adopted by a family who would very much like him to remain. He is charming, he is grateful, and everyone can tell he is going to leave.",
+          "Tonight there is food and there is the question of tomorrow."],
+   phrases:['tp_eaten','tp_stayhere','tp_sitdown','tp_comeback'] },
+ { day:36, id:'t5', tr:'tagore', unit:'u4', title:'The bride who climbs trees',
+   place:'A village house', person:'Mrinmoyi',
+   source:'সমাপ্তি, Samapti, 1893',
+   scene:["A marriage has been arranged between a young man from the city and a girl who would rather be outdoors than be anybody's wife. Neither of them knows how to speak to the other yet.",
+          "She is sitting on the step, refusing to come in, and she is not sorry."],
+   phrases:['tp_angry','tp_sitdown','tp_dontfear','tp_comeback'] },
+ { day:50, id:'t6', tr:'tagore', unit:'u6', title:'The servant and the child',
+   place:'By the riverbank', person:'Raicharan',
+   source:'খোকাবাবুর প্রত্যাবর্তন, The Return of Khokababu, 1891',
+   scene:["An old servant has carried, fed and watched this family's children for most of his life. He speaks to the boy with a tenderness that has no rank in it, and to you with the careful politeness of his position.",
+          "The light is going and he wants the child home."],
+   phrases:['tp_dontfear','tp_eaten','tp_stayhere','tp_comeback'] },
+);
+
+/* --- Tagore track dialogues --- */
+Object.assign(DIALOGUES, {
+ t1:[
+  {who:'Mini',   r:'Tumi ke go? Oi jholay ki achhe?', sc:'তুমি কে গো? ওই ঝোলায় কী আছে?', en:'Who are you? What is in that bag?'},
+  {who:'Rahamat',r:'Khejur, badam, aro onek kichhu.', sc:'খেজুর, বাদাম, আরো অনেক কিছু।', en:'Dates, almonds, plenty of things.'},
+  {who:'Mini',   r:'Amake debe?',                     sc:'আমাকে দেবে?',                  en:'Will you give me some?'},
+  {who:'Rahamat',r:'Debo. Bhoy peo na, kachhe esho.', sc:'দেবো। ভয় পেয়ো না, কাছে এসো।',  en:'I will. Do not be afraid, come closer.'},
+  {who:'You',    r:'Ora bhab kore niyeche dekhchhi.', sc:'ওরা ভাব করে নিয়েছে দেখছি।',    en:'They have made friends, I see.'},
+  {who:'Rahamat',r:'Amar-o ekta meye achhe, oi rokom.',sc:'আমারও একটা মেয়ে আছে, ওই রকম।', en:'I have a daughter too, just like her.'},
+  {who:'You',    r:'Abar esho kintu.',                sc:'আবার এসো কিন্তু।',              en:'Do come again.'}
+ ],
+ t2:[
+  {who:'Ratan',  r:'Amake ektu shikhiye din na.',     sc:'আমাকে একটু শিখিয়ে দিন না।',    en:'Do teach me a little.'},
+  {who:'You',    r:'Esho, boso. Kolom dhoro.',        sc:'এসো, বসো। কলম ধরো।',            en:'Come, sit. Hold the pen.'},
+  {who:'Ratan',  r:'Amar naam likhe din.',            sc:'আমার নাম লিখে দিন।',            en:'Write my name for me.'},
+  {who:'You',    r:'Ei dekho, ra-ta-na. Ratan.',      sc:'এই দেখো, র-ত-ন। রতন।',          en:'Look, ra ta na. Ratan.'},
+  {who:'Ratan',  r:'Aro likhi?',                      sc:'আরো লিখি?',                     en:'Shall I write more?'},
+  {who:'You',    r:'Likho. Bhalo hochchhe.',          sc:'লেখো। ভালো হচ্ছে।',             en:'Write. It is coming along well.'}
+ ],
+ t3:[
+  {who:'Phatik', r:'Kobe bari jabo?',                 sc:'কবে বাড়ি যাবো?',               en:'When will I go home?'},
+  {who:'You',    r:'Chhuti hole jabe.',               sc:'ছুটি হলে যাবে।',                en:'When the holidays come.'},
+  {who:'Phatik', r:'Bari-r jonno mon kemon korchhe.', sc:'বাড়ির জন্য মন কেমন করছে।',     en:'I am homesick.'},
+  {who:'You',    r:'Jani. Rag koro na.',              sc:'জানি। রাগ কোরো না।',            en:'I know. Do not be cross.'},
+  {who:'Phatik', r:'Ekhane amar kichhu bhalo lage na.',sc:'এখানে আমার কিছু ভালো লাগে না।',en:'I do not like anything here.'},
+  {who:'You',    r:'Bhoy peo na, shomoy legey jabe.', sc:'ভয় পেয়ো না, সময় লেগে যাবে।',  en:'Do not be afraid, it takes time.'}
+ ],
+ t4:[
+  {who:'You',      r:'Kheyechho to?',                 sc:'খেয়েছ তো?',                    en:'You have eaten, I hope?'},
+  {who:'Tarapada', r:'Kheyechhi. Onek hoye gechhe.',  sc:'খেয়েছি। অনেক হয়ে গেছে।',      en:'I have. It was a great deal.'},
+  {who:'You',      r:'Aaj ekhane theke jao.',         sc:'আজ এখানে থেকে যাও।',            en:'Stay here today.'},
+  {who:'Tarapada', r:'Dekhi. Bola jay na.',           sc:'দেখি। বলা যায় না।',            en:'We shall see. One cannot say.'},
+  {who:'You',      r:'Esho, boso ektu.',              sc:'এসো, বসো একটু।',                en:'Come, sit a while.'},
+  {who:'Tarapada', r:'Boshchhi. Tarpor dekha jabe.',  sc:'বসছি। তারপর দেখা যাবে।',        en:'I am sitting. Then we shall see.'}
+ ],
+ t5:[
+  {who:'Mrinmoyi', r:'Ami bhitore jabo na.',          sc:'আমি ভিতরে যাবো না।',            en:'I am not going inside.'},
+  {who:'You',      r:'Rag koro na. Esho, boso.',      sc:'রাগ কোরো না। এসো, বসো।',        en:'Do not be cross. Come, sit.'},
+  {who:'Mrinmoyi', r:'Shobai amake bokchhe.',         sc:'সবাই আমাকে বকছে।',              en:'Everyone is scolding me.'},
+  {who:'You',      r:'Ami bokbo na. Bhoy peo na.',    sc:'আমি বকবো না। ভয় পেয়ো না।',    en:'I will not scold you. Do not be afraid.'},
+  {who:'Mrinmoyi', r:'Sotti to?',                     sc:'সত্যি তো?',                     en:'Truly?'},
+  {who:'You',      r:'Sotti. Abar esho kintu.',       sc:'সত্যি। আবার এসো কিন্তু।',       en:'Truly. Do come again.'}
+ ],
+ t6:[
+  {who:'Raicharan',r:'Khokababu, kachhe esho.',       sc:'খোকাবাবু, কাছে এসো।',           en:'Little master, come closer.'},
+  {who:'Raicharan',r:'Jol-er dhare jeo na, bhoy peo na aami achhi.',sc:'জলের ধারে যেয়ো না, ভয় পেয়ো না আমি আছি।',en:'Do not go near the water, do not be afraid, I am here.'},
+  {who:'You',      r:'O kheyechhe to?',               sc:'ও খেয়েছে তো?',                 en:'Has he eaten?'},
+  {who:'Raicharan',r:'Kheyechhe, babu. Ami khaiyechhi.',sc:'খেয়েছে, বাবু। আমি খাইয়েছি।',en:'He has, sir. I fed him myself.'},
+  {who:'You',      r:'Aaj ekhane theke jao, ondhokar hoye gechhe.',sc:'আজ এখানে থেকে যাও, অন্ধকার হয়ে গেছে।',en:'Stay here today, it has gone dark.'},
+  {who:'Raicharan',r:'Na babu, take bari niye jai.',  sc:'না বাবু, তাকে বাড়ি নিয়ে যাই।',en:'No sir, let me take him home.'}
+ ],
+});
