@@ -547,7 +547,7 @@ function viewAlbum(){
     const L=(w.r[0]||'').toUpperCase();
     if(L!==letter){ letter=L; cards+=`<div class="alpha-head">${escapeHtml(letter)}</div>`; }
     const got=state.words.has(w.r);
-    cards+=`<button class="wcard" data-w="${escapeHtml(w.r)}">${got?`<span class="lvl">${icon('check')}</span>`:''}
+    cards+=`<button class="wcard${got?' met':''}" data-w="${escapeHtml(w.r)}">
       <div class="rm">${escapeHtml(w.r)}</div><div class="sc">${w.sc}</div>
       ${w.ph?`<div class="wph">${escapeHtml(w.ph)}</div>`:''}
       <div class="en">${escapeHtml(w.en)}</div></button>`;
@@ -571,6 +571,8 @@ function viewAlbum(){
 /* ---------- games ---------- */
 const W=r=>WORDS.find(x=>x.r===r);
 const pick=a=>a[Math.floor(Math.random()*a.length)];
+/* draw from what you have actually met, falling back to everything */
+function pool(){ const met=WORDS.filter(w=>state.words.has(w.r)); return met.length>=12?met:WORDS; }
 const GAMES=[
   {id:'opposites', ic:'bolt',    name:'Opposites Sprint', desc:'Tap the opposite. bhalo to kharap.'},
   {id:'match',     ic:'link',    name:'Meaning Match',    desc:'Pair each Bengali word with its English.'},
@@ -607,22 +609,22 @@ function mcqGame(cfg){ let idx=0,score=0; const n=cfg.rounds||6;
 }
 const wOpt=(w,ok)=>({html:`${w.r} <span class="script">${w.sc}</span> <span class="muted">${w.en}</span>`,ok});
 const enOpt=(w,ok)=>({html:escapeHtml(w.en),ok});
-function distract(w,key){ return shuffle(WORDS.filter(x=>x[key]!==w[key])).slice(0,3); }
+function distract(w,key){ const P=pool(); const src=P.length>=8?P:WORDS; return shuffle(src.filter(x=>x[key]!==w[key])).slice(0,3); }
 function gOpposites(){ mcqGame({title:'Opposites Sprint',sub:'What is the opposite of',make:()=>{
   const pair=pick(OPPOSITES); const [a,b]=shuffle(pair.slice()); const wA=W(a),wB=W(b);
   const options=shuffle([wOpt(wB,true),...shuffle(WORDS.filter(w=>w.r!==a&&w.r!==b)).slice(0,3).map(w=>wOpt(w,false))]);
   return {html:`<div class="q-roman">${wA.r} <span class="q-sc" style="display:inline">${wA.sc}</span></div><div class="q-hint">${wA.en}</div>`,say:wA.sc,options};
 }}); }
 function gListen(){ mcqGame({title:'Ear Training',sub:'Listen, then choose the meaning',make:()=>{
-  const w=pick(WORDS); const options=shuffle([enOpt(w,true),...distract(w,'en').map(x=>enOpt(x,false))]);
+  const w=pick(pool()); const options=shuffle([enOpt(w,true),...distract(w,'en').map(x=>enOpt(x,false))]);
   return {html:`<div class="q-hint">Tap Listen, then choose what it means.</div>`,say:w.sc,options};
 }}); }
 function gRead(){ mcqGame({title:'Read the Script',sub:'Read the Bengali, choose the meaning',make:()=>{
-  const w=pick(WORDS); const options=shuffle([enOpt(w,true),...distract(w,'en').map(x=>enOpt(x,false))]);
+  const w=pick(pool()); const options=shuffle([enOpt(w,true),...distract(w,'en').map(x=>enOpt(x,false))]);
   return {html:`<div class="q-sc" style="font-size:2.6rem;margin-bottom:6px">${w.sc}</div>`,say:w.sc,options};
 }}); }
 function gRecall(){ mcqGame({title:'Word Rush',sub:'See the English, pick the Bengali',make:()=>{
-  const w=pick(WORDS); const opt=(x,ok)=>({html:`${x.r} <span class="script">${x.sc}</span>`,ok});
+  const w=pick(pool()); const opt=(x,ok)=>({html:`${x.r} <span class="script">${x.sc}</span>`,ok});
   const options=shuffle([opt(w,true),...distract(w,'r').map(x=>opt(x,false))]);
   return {html:`<div class="q-en">${escapeHtml(w.en)}</div>`,options};
 }}); }
@@ -630,7 +632,7 @@ function gRegister(){ mcqGame({title:'Tui or Aapni',sub:'Which "you" fits this p
   const pp=pick(PEOPLE); const options=shuffle(['tui','tumi','aapni'].map(r=>({html:`<b class="bn">${r}</b>`,ok:r===pp.reg})));
   return {html:`<div class="q-en">${escapeHtml(pp.name)} <span class="sc" style="font-family:var(--font-bengali);color:var(--muted);font-size:.7em">${pp.sc}</span></div><div class="q-hint">${escapeHtml(pp.role)}</div>`,options};
 }}); }
-function gameMatch(){ const picks=shuffle(WORDS.filter(w=>w.pack!=='core')).slice(0,5); const left=shuffle(picks),right=shuffle(picks); let sel=null,done=0;
+function gameMatch(){ const picks=shuffle(pool().filter(w=>w.pack!=='core')).slice(0,5); const left=shuffle(picks),right=shuffle(picks); let sel=null,done=0;
   app().innerHTML=`<span class="crumb" onclick="location.hash='#/games'">${icon('back')} Games</span>
     <div class="app-head"><h1>Meaning Match</h1><p>Tap a Bengali word, then its English. Clear all five.</p></div>
     <div class="match-grid"><div class="match-col" id="L">${left.map(w=>`<button class="match-btn roman" data-r="${w.r}">${w.r}<br><span class="sc" style="font-size:.9em;opacity:.75">${w.sc}</span></button>`).join('')}</div>
