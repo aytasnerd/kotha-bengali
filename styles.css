@@ -351,8 +351,9 @@ h1,h2,h3,h4{font-family:var(--font-serif);color:var(--text);line-height:1.05;fon
 .searchbar input:focus{box-shadow:var(--pop-3);transform:translate(-1px,-1px)}
 .searchcount{font-size:.82rem;font-weight:700;color:var(--muted);white-space:nowrap}
 .wcard .wph{font-family:var(--font-serif);font-style:italic;font-size:.82rem;color:var(--bengali);opacity:.85}
-/* a word you have met gets a quiet accent edge, no badge */
-.wcard.met{border-left-width:6px;border-left-color:var(--accent)}
+/* a word you have met simply reads as already yours */
+.wcard.met{background:var(--bg-2)}
+.wcard.met .rm{color:var(--text)}
 
 /* album */
 .filter-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
@@ -599,3 +600,32 @@ details.howto summary{cursor:pointer;list-style:none;font-size:.72rem;font-weigh
 details.howto summary::after{content:'+';font-size:1.2rem;color:var(--accent)}
 details.howto[open] summary::after{content:'\2212'}
 details.howto ol{margin-top:10px}
+
+/* ---- story path ---- */
+.path{position:relative;margin:6px 0 0;padding-left:8px}
+.path::before{content:'';position:absolute;left:31px;top:14px;bottom:14px;width:3px;background:var(--line-soft)}
+.node{position:relative;display:grid;grid-template-columns:48px 1fr;gap:16px;align-items:center;
+  padding:8px 0;cursor:pointer;text-align:left;background:none;border:none;width:100%}
+.node .dot{width:48px;height:48px;border-radius:50%;border:3px solid var(--line);background:var(--surface);
+  display:grid;place-items:center;font-family:var(--font-serif);font-size:1.15rem;font-weight:600;color:var(--text);
+  position:relative;z-index:1;box-shadow:var(--pop-2)}
+.node.done .dot{background:var(--accent);color:var(--on-accent)}
+.node.mile .dot{width:56px;height:56px;border-width:4px;font-size:1.3rem;background:var(--v-50)}
+.node.mile.done .dot{background:var(--v-500);color:#fff}
+.node.next .dot{background:var(--t-600);color:#fff;box-shadow:0 0 0 5px var(--t-50),var(--pop-2)}
+.node .body h4{font-family:var(--font-sans);font-weight:700;font-size:1.03rem;color:var(--text)}
+.node .body .meta{font-size:.83rem;color:var(--muted)}
+.node.done .body h4{color:var(--muted)}
+.node .tagpill{display:inline-block;font-size:.66rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--v-700);background:var(--v-50);border:1.5px solid var(--line);border-radius:var(--radius-pill);padding:.1em .5em;margin-left:6px}
+.node.next .tagpill{color:var(--t-700);background:var(--t-50)}
+.cando{background:var(--surface);border:2px solid var(--line);border-radius:var(--radius);padding:12px 14px;
+  margin:10px 0 4px;box-shadow:var(--pop-2)}
+.cando h5{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);
+  font-family:var(--font-sans);margin-bottom:6px}
+.cando p{font-size:.92rem;color:var(--text-2)}
+.continue-card{background:var(--accent);color:var(--on-accent);border:2px solid var(--line);border-radius:var(--radius-lg);
+  padding:18px 20px;box-shadow:var(--pop-5);margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+.continue-card .cc-sub{font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.85}
+.continue-card h3{color:var(--on-accent);font-size:1.3rem;margin-top:2px}
+.continue-card .btn{background:var(--surface);color:var(--text)}

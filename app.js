@@ -395,34 +395,54 @@ function viewLibrary(){
       <span class="ico">${icon(s.ic)}</span><h3>${s.t}</h3><p>${s.p}</p>${s.c?`<span class="count">${s.c}</span>`:''}</button>`).join('')}</div>`;
 }
 
-function dayRow(d){ const done=state.days.has(d.id);
-  return `<button class="day-row ${done?'complete':''} ${d.milestone?'milestone':''}" onclick="location.hash='#/day/${d.id}'">
-    <div class="dn"><small>DAY</small>${d.day}</div>
-    <div><h4>${d.milestone?`<span class="mile-tag">${icon('star')}</span>`:''}${d.title}</h4><div class="meta">${d.place}. ${d.person}. ${d.phrases.length} phrases</div></div>
-    <div>${done?`<span class="done">${icon('check')} done</span>`:'<span class="pdot"></span>'}</div></button>`; }
+/* what you can do after each unit, the reason to keep going */
+const UNIT_CANDO={
+ u1:'introduce yourself, greet an elder properly, and order a cup of tea',
+ u2:'take a taxi, say where you live, and follow directions',
+ u3:'tell the time, ask a price, and push it down',
+ u4:'talk about family and order a full breakfast',
+ u5:'sit at her parents table and stay in Bengali',
+ u6:'handle the city alone, and face Thakuma',
+};
+function nextChapter(){ return DAYS.find(d=>!state.days.has(d.id)); }
 function chooseStory(){ state.track=null; save(); router(); }
 function viewTrackChooser(){
   app().innerHTML=`<span class="crumb" onclick="location.hash='#/library'">${icon('back')} Library</span>
     <div class="app-head"><h1>Choose your story <span class="sc">গল্প বেছে নাও</span></h1>
-      <p>Same sixty days in Kolkata, the same city full of people to talk to. Pick the reason that fits you. You can change it any time.</p></div>
+      <p>Same sixty days in Kolkata, the same people to talk to. Pick the reason that fits you. You can change it any time.</p></div>
     <div class="track-grid">${TRACKS.map(t=>`<button class="track-card ${state.track===t.id?'sel':''}" onclick="setTrack('${t.id}')">
-      <div class="tk-label">${t.label}</div><div class="tk-tag">${t.tagline}</div><p>${t.who}</p><div class="tk-rel">${t.rel}</div></button>`).join('')}</div>`;
+      <div class="tk-label">${escapeHtml(t.label)}</div><div class="tk-tag">${escapeHtml(t.tagline)}</div>
+      <p>${escapeHtml(t.who)}</p><div class="tk-rel">${escapeHtml(t.rel)}</div></button>`).join('')}</div>`;
 }
 function viewStory(){
   if(!state.track) return viewTrackChooser();
-  const t=getTrack();
-  const sections=UNITS.map(u=>{ const days=DAYS.filter(d=>d.unit===u.id); if(!days.length) return '';
-    const done=days.filter(d=>state.days.has(d.id)).length;
-    return `<div class="unit-head"><div><span class="unit-bn script">${u.bn}</span><h3>${u.title}</h3><p>${u.sub}</p></div>
-      <span class="unit-prog">${done}/${days.length}</span></div><div class="day-list">${days.map(dayRow).join('')}</div>`; }).join('');
+  const t=getTrack(), nx=nextChapter();
+  const done=DAYS.filter(d=>state.days.has(d.id)).length;
+  const sections=UNITS.map(u=>{
+    const days=DAYS.filter(d=>d.unit===u.id); if(!days.length) return '';
+    const ud=days.filter(d=>state.days.has(d.id)).length;
+    const nodes=days.map(d=>{
+      const isDone=state.days.has(d.id), isNext=nx&&nx.id===d.id;
+      return `<button class="node ${isDone?'done':''} ${d.milestone?'mile':''} ${isNext?'next':''}" onclick="location.hash='#/day/${d.id}'">
+        <span class="dot">${d.day}</span>
+        <span class="body"><h4>${escapeHtml(d.title)}${d.milestone?'<span class="tagpill">milestone</span>':isNext?'<span class="tagpill">next up</span>':''}</h4>
+        <span class="meta">${escapeHtml(d.place)}. ${escapeHtml(d.person)}</span></span></button>`;
+    }).join('');
+    return `<div class="unit-head"><div><span class="unit-bn script">${u.bn}</span><h3>${escapeHtml(u.title)}</h3></div>
+        <span class="unit-prog">${ud}/${days.length}</span></div>
+      ${UNIT_CANDO[u.id]?`<div class="cando"><h5>After this unit you can</h5><p>${UNIT_CANDO[u.id]}</p></div>`:''}
+      <div class="path">${nodes}</div>`;
+  }).join('');
   app().innerHTML=`<span class="crumb" onclick="location.hash='#/library'">${icon('back')} Library</span>
-    <div class="track-strip"><span>Your story: <b>${t.label}</b>. You play <b>${t.name}</b>. ${t.rel}</span>
-      <button class="mini-link" onclick="chooseStory()">Change</button></div>
-    <div class="app-head"><h1>The story <span class="sc">গল্প</span></h1>
-      <p>${t.who} ${t.d30} ${t.d60}</p></div>
+    ${nx?`<div class="continue-card">
+        <div><div class="cc-sub">Day ${nx.day}, next up</div><h3>${escapeHtml(nx.title)}</h3>
+          <div style="opacity:.9;font-size:.9rem">${escapeHtml(nx.place)}. With ${escapeHtml(nx.person)}.</div></div>
+        <button class="btn" onclick="location.hash='#/day/${nx.id}'">Continue</button></div>`
+      :`<div class="continue-card"><div><div class="cc-sub">The whole story</div><h3>You finished it</h3></div></div>`}
+    <div class="track-strip"><span>Playing as <b>${escapeHtml(t.name)}</b>. ${done} of ${DAYS.length} chapters done.</span>
+      <button class="mini-link" onclick="chooseStory()">Change story</button></div>
     ${sections}`;
 }
-
 /* ---------- player ---------- */
 let P=null;
 function viewPlayer(id){ const day=DAYS.find(d=>d.id===id); if(!day) return viewStory();
