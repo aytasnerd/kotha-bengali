@@ -47,7 +47,7 @@ function protName(){ const t=getTrack(); return t?t.name:'Kabir'; }
 function PZ(s){ if(!s) return s; const t=getTrack(); if(!t||t.id==='love') return s;
   return s.split('Kabir').join(t.name).split('কবির').join(t.nameSc).split('kobir').join(t.namePh); }
 function pzPhrase(p){ return {r:PZ(p.r), sc:PZ(p.sc), en:PZ(p.en), ph:PZ(p.ph), words:p.words}; }
-function setTrack(id){ state.track=id; save(); location.hash='#/story'; }
+function setTrack(id){ state.track=id; save(); if(location.hash==='#/story') router(); else location.hash='#/story'; }
 
 /* ---------- state ---------- */
 const KEY = 'kotha.v1';
@@ -696,23 +696,34 @@ function viewScript(){
 function viewLetter(gi){ const x=SCRIPT_ALL[gi]; if(!x) return viewScript();
   const isNum=gi>=SCRIPT.vowels.length+SCRIPT.consonants.length;
   const steps = isNum
-    ? ['Start at the top of the numeral.','Draw it in one flowing stroke where you can, top to bottom.','Numerals have no matra headline, so no top line.']
-    : ['Draw the body of the letter first, starting at the top and moving down.','Make the curves and bellies left to right, keeping the pen flowing.','Add the matra, the straight headline across the top, last, in one stroke from left to right.'];
+    ? ['Start at the top of the numeral.','Draw it in one flowing stroke where you can, top to bottom.','Numerals carry no matra headline.']
+    : ['Draw the body first, starting at the top and moving down.','Make the curves and bellies left to right, keeping the pen flowing.','Add the matra, the headline across the top, last, left to right.'];
   app().innerHTML=`<span class="crumb" onclick="location.hash='#/script'">${icon('back')} All letters</span>
-    <div class="letter-detail">
-      <div class="letter-info"><div class="lbig">${x.ch}</div>
-        <div class="lname-big">${escapeHtml(x.name)}</div><div class="lipa">${escapeHtml(x.ipa)}</div>
-        ${x.exsc?`<div class="lex">as in <button class="ex-say" data-say="${x.exsc}">${SPK}</button> <b>${escapeHtml(x.ex)}</b> <span class="sc">${x.exsc}</span> ${escapeHtml(x.exen)}</div>`:''}
-        <button class="speak-btn" data-say="${x.exsc||x.ch}" style="margin-top:12px">${SPK} Listen</button>
-        <div class="howto"><div class="howto-t">How to write it</div>
-          <ol>${steps.map(s=>`<li>${s}</li>`).join('')}</ol></div></div>
-      <div class="trace-wrap"><div class="trace-title">Trace the faint letter, then try it free</div>
-        <canvas id="trace" width="320" height="320"></canvas>
-        <div class="trace-hint">Stroke order runs top to bottom${isNum?'':', matra last, left to right'} ${isNum?'':icon('back','flip')}</div>
-        <div class="trace-actions"><button class="btn btn-ghost btn-sm" id="clr">Clear</button>
-          <button class="btn btn-ghost btn-sm" id="prev">Previous</button><button class="btn btn-teal btn-sm" id="next">Next letter</button></div></div>
-    </div>`;
+    <div class="letter-top">
+      <div class="lt-glyph">${x.ch}</div>
+      <div class="lt-meta">
+        <div class="lname-big">${escapeHtml(x.name)}</div>
+        <div class="lipa">${escapeHtml(x.ipa)}</div>
+        ${x.exsc?`<div class="lex"><b>${escapeHtml(x.ex)}</b> <span class="sc">${x.exsc}</span> ${escapeHtml(x.exen)}</div>`:''}
+      </div>
+      <button class="speak-btn" data-say="${x.exsc||x.ch}">${SPK}</button>
+    </div>
+    <div class="trace-wrap">
+      <canvas id="trace" width="320" height="320"></canvas>
+      <div id="score" class="trace-score"></div>
+      <div class="trace-actions">
+        <button class="btn btn-ghost btn-sm" id="prev">${icon('back')} Prev</button>
+        <button class="btn btn-ghost btn-sm" id="clr">Clear</button>
+        <button class="btn btn-teal btn-sm" id="check">Check stroke</button>
+        <button class="btn btn-primary btn-sm" id="next">Next ${icon('back','flip')}</button>
+      </div>
+    </div>
+    <details class="howto" ${localStorage.getItem('kotha.howto')==='0'?'':'open'} id="howto">
+      <summary>How to write it</summary>
+      <ol>${steps.map(t=>`<li>${t}</li>`).join('')}</ol>
+    </details>`;
   initTrace(x.ch, !isNum);
+  $('#howto').ontoggle=e=>localStorage.setItem('kotha.howto', e.target.open?'1':'0');
   $('#prev').onclick=()=>location.hash='#/letter/'+((gi-1+SCRIPT_ALL.length)%SCRIPT_ALL.length);
   $('#next').onclick=()=>location.hash='#/letter/'+((gi+1)%SCRIPT_ALL.length);
 }
@@ -721,33 +732,72 @@ function cssColor(name,fallback){
   document.body.appendChild(p); const c=getComputedStyle(p).color; p.remove();
   return (c && c!=='rgba(0, 0, 0, 0)') ? c : fallback;
 }
+function drawGlyph(ctx,ch,S,size){
+  ctx.font=size+'px "Hind Siliguri","Noto Sans Bengali",serif';
+  ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+  const m=ctx.measureText(ch);
+  const l=m.actualBoundingBoxLeft||0, r=m.actualBoundingBoxRight||m.width;
+  const asc=m.actualBoundingBoxAscent||size*0.8, dsc=m.actualBoundingBoxDescent||0;
+  const w=l+r, h=asc+dsc;
+  ctx.fillText(ch,(S-w)/2+l,(S-h)/2+asc);
+}
 function initTrace(ch,matra){
   const cv=$('#trace'); if(!cv) return;
-  const ctx=cv.getContext('2d');
+  const ctx=cv.getContext('2d',{willReadFrequently:true});
   const ghost=cssColor('--accent','#3b4ee6'), strokeC=cssColor('--t-600','#0f736d');
   const S=320, dpr=Math.min(window.devicePixelRatio||1,3);
   cv.width=S*dpr; cv.height=S*dpr; ctx.scale(dpr,dpr);
+  const mask=document.createElement('canvas'); mask.width=mask.height=S;
+  const mx=mask.getContext('2d',{willReadFrequently:true});
+  const paintMask=()=>{ mx.clearRect(0,0,S,S); mx.fillStyle='#000'; drawGlyph(mx,ch,S,210); };
+  const ink=document.createElement('canvas'); ink.width=ink.height=S;
+  const ix=ink.getContext('2d',{willReadFrequently:true});
+  ix.lineWidth=9; ix.lineCap='round'; ix.lineJoin='round'; ix.strokeStyle='#000';
+  let used=false;
   function bg(){
     ctx.clearRect(0,0,S,S);
-    ctx.save(); ctx.globalAlpha=.16; ctx.fillStyle=ghost;
-    ctx.font='230px "Hind Siliguri","Noto Sans Bengali",serif';
-    ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(ch,160,172);
-    if(matra){ ctx.globalAlpha=.4; ctx.strokeStyle=strokeC; ctx.lineWidth=2; ctx.setLineDash([6,6]);
-      ctx.beginPath(); ctx.moveTo(52,64); ctx.lineTo(268,64); ctx.stroke();
-      ctx.setLineDash([]); ctx.beginPath(); ctx.moveTo(260,58); ctx.lineTo(268,64); ctx.lineTo(260,70); ctx.stroke(); }
+    ctx.save(); ctx.globalAlpha=.16; ctx.fillStyle=ghost; drawGlyph(ctx,ch,S,210);
+    if(matra){ ctx.globalAlpha=.35; ctx.strokeStyle=strokeC; ctx.lineWidth=2; ctx.setLineDash([5,5]);
+      ctx.beginPath(); ctx.moveTo(46,58); ctx.lineTo(274,58); ctx.stroke(); ctx.setLineDash([]); }
     ctx.restore();
-    ctx.strokeStyle=strokeC; ctx.lineWidth=8; ctx.lineCap='round'; ctx.lineJoin='round';
+    ctx.strokeStyle=strokeC; ctx.lineWidth=9; ctx.lineCap='round'; ctx.lineJoin='round';
+    ix.clearRect(0,0,S,S); used=false; const el=$('#score'); if(el){el.textContent='';el.className='trace-score';}
   }
-  bg();
-  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>{ if(document.body.contains(cv)) bg(); });
+  paintMask(); bg();
+  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>{ if(document.body.contains(cv)){ paintMask(); bg(); } });
   let drawing=false;
   const pos=e=>{ const r=cv.getBoundingClientRect(); return [(e.clientX-r.left)*(S/r.width),(e.clientY-r.top)*(S/r.height)]; };
-  cv.addEventListener('pointerdown',e=>{ drawing=true; try{cv.setPointerCapture(e.pointerId);}catch(_){}
-    const [x,y]=pos(e); ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+.01,y); ctx.stroke(); e.preventDefault(); });
-  cv.addEventListener('pointermove',e=>{ if(!drawing) return; const [x,y]=pos(e); ctx.lineTo(x,y); ctx.stroke(); e.preventDefault(); });
+  cv.addEventListener('pointerdown',e=>{ drawing=true; used=true; try{cv.setPointerCapture(e.pointerId);}catch(_){}
+    const [x,y]=pos(e); ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+.01,y); ctx.stroke();
+    ix.beginPath(); ix.moveTo(x,y); ix.lineTo(x+.01,y); ix.stroke(); e.preventDefault(); });
+  cv.addEventListener('pointermove',e=>{ if(!drawing) return; const [x,y]=pos(e);
+    ctx.lineTo(x,y); ctx.stroke(); ix.lineTo(x,y); ix.stroke(); e.preventDefault(); });
   const stop=e=>{ drawing=false; try{cv.releasePointerCapture(e.pointerId);}catch(_){} };
-  cv.addEventListener('pointerup',stop); cv.addEventListener('pointercancel',stop); cv.addEventListener('pointerleave',stop);
+  ['pointerup','pointercancel','pointerleave'].forEach(t=>cv.addEventListener(t,stop));
   $('#clr').onclick=bg;
+  $('#check').onclick=()=>{
+    const el=$('#score');
+    if(!used){ el.className='trace-score warn'; el.textContent='Trace over the faint letter first, then check.'; return; }
+    const G=40, cell=S/G;
+    const T=mx.getImageData(0,0,S,S).data, U=ix.getImageData(0,0,S,S).data;
+    let hit=0,tot=0,drawn=0;
+    for(let gy=0;gy<G;gy++)for(let gx=0;gx<G;gx++){
+      let t=0,u=0;
+      for(let y=Math.floor(gy*cell);y<(gy+1)*cell;y+=2)for(let x=Math.floor(gx*cell);x<(gx+1)*cell;x+=2){
+        const i=((y*S)+x)*4;
+        if(T[i+3]>60) t=1;
+        if(U[i+3]>60) u=1;
+      }
+      if(t){ tot++; if(u) hit++; }
+      if(u) drawn++;
+    }
+    const covered=tot?hit/tot:0, onTarget=drawn?hit/drawn:0;
+    const score=Math.round((covered*0.65+onTarget*0.35)*100);
+    el.className='trace-score '+(score>=75?'good':score>=50?'warn':'bad');
+    el.textContent = score>=75 ? `Nicely done. ${score} out of 100.`
+      : score>=50 ? `Close. ${score} out of 100, follow the faint shape more exactly.`
+      : `${score} out of 100. Clear it and stay on the grey letter.`;
+  };
 }
 
 /* ---------- progress ---------- */
