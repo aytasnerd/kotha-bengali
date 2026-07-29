@@ -23,6 +23,7 @@ const IC={
   people:'<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 5.2a3.2 3.2 0 0 1 0 5.6M20.5 19a5.5 5.5 0 0 0-4-5.3"/>',
   bolt:'<path d="M13 3 5 13h6l-1 8 8-11h-6z"/>',
   link:'<path d="M9.5 14.5 14.5 9.5"/><path d="M11 6.5 12 5.5a4 4 0 0 1 5.6 5.6l-1 1"/><path d="M13 17.5l-1 1a4 4 0 0 1-5.6-5.6l1-1"/>',
+  down:`<path d='M12 4v11'/><path d='M7.5 11 12 15.5 16.5 11'/><path d='M5 19h14'/>`,
   compass:'<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5 13 13l-4.5 2.5L11 11z"/>',
 };
 function icon(n,extra){ return `<svg class="icn ${extra||''}" viewBox="0 0 24 24" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n]||''}</svg>`; }
@@ -366,13 +367,13 @@ function reviewStep(){
 /* ============================ ROUTER ============================ */
 const NAVGROUP = { '':'home', review:'home', library:'home', album:'home', games:'home', game:'home', people:'home',
   guides:'home', guide:'home', story:'learn', day:'learn', scene:'learn',
-  script:'script', letter:'script', writing:'writing', post:'writing', progress:'profile' };
+  script:'script', letter:'script', workbook:'script', writing:'writing', post:'writing', progress:'profile' };
 function router(){
   let h=location.hash.replace(/^#\/?/,'');
   if(!h && !state.days.size && !state.track){ location.hash='#/story'; return; }
   const [base,arg]=h.split('/'); window.scrollTo(0,0);
   const map={ '':viewLibrary, library:viewLibrary, story:viewStory, album:viewAlbum, games:viewGames,
-    people:viewPeople, progress:viewProgress, guides:viewGuides, writing:viewWriting, script:viewScript };
+    people:viewPeople, progress:viewProgress, guides:viewGuides, writing:viewWriting, script:viewScript, workbook:viewWorkbook };
   if(base==='day') viewPlayer(arg);
   else if(base==='game') viewGame(arg);
   else if(base==='guide') viewGuideDetail(arg);
@@ -397,6 +398,7 @@ function viewLibrary(){
     {ic:'book', t:'The story',    p:'Sixty days in Kolkata, played one chapter at a time.', c:DAYS.length+' chapters', go:'#/story'},
     {ic:'cards',t:'Word Album',   p:'Every word you meet becomes a card you collect.', c:state.words.size+'/'+WORDS.length+' collected', go:'#/album'},
     {ic:'pen',  t:'Read & write', p:'The Bengali script: read it, hear it, and trace every letter.', c:nLetters+' letters', go:'#/script'},
+    {ic:'book', t:'Writing workbook', p:'A printable 153 page handwriting book, free to download.', c:'PDF, 1.3 MB', go:'#/workbook'},
     {ic:'dice', t:'Games',        p:'Quick rounds built from the words you have met.', c:GAMES.length+' games', go:'#/games'},
     {ic:'people',t:'People',      p:'Everyone speaks to you a little differently.', c:PEOPLE.length+' people', go:'#/people'},
     {ic:'compass',t:'Guides',     p:'Plain explanations of the parts that trip people up.', c:GUIDES.length+' guides', go:'#/guides'},
@@ -744,6 +746,75 @@ function viewPost(id){ const b=BLOG.find(x=>x.id===id); if(!b) return viewWritin
     <article class="prose"><h1>${escapeHtml(b.title)}</h1><p class="lead" style="margin:8px 0 6px">${escapeHtml(b.deck)}</p>
       <div class="meta" style="color:var(--text-faint);font-weight:700;margin-bottom:22px">${escapeHtml(b.date)}. ${b.mins} min read</div>${renderProse(b.body)}</article>`; }
 
+
+/* ---------- the printable workbook ---------- */
+const WB_FAQ = [
+ ['Do I need a tablet?',
+  'No. It is a PDF. Print it at 100 percent on A4 or Letter and it works exactly the same. The page is a little squarer than A4, so you will get a small white margin. Nothing is cut off.'],
+ ['Why is the page that shape?',
+  'It is 8 by 10.67 inches, which is the 3 to 4 shape of a 13.3 inch e-ink tablet. On one of those it fills the screen with no pinching and no letterboxing. On paper it just prints slightly squarer than usual.'],
+ ['Do I need to know the alphabet first?',
+  'No. It starts at the beginning, with the writing line itself, then the eleven vowels, then the vowel signs, then all the consonants. If you already read Bengali, skip to the conjuncts on page 65.'],
+ ['Why politics, economy and farming?',
+  'Because that is what adult Bengali writing is actually about. Most beginner books teach you mango, elephant and grandmother. Those are fine words, but you cannot read a newspaper with them. Here you learn নির্বাচন, রপ্তানি and বোরো instead.'],
+ ['Is it about current events?',
+  'Deliberately not. The sentences describe how a panchayat works, what boro rice needs, why remittances matter. Institutions and seasons rather than this month’s headlines, so the vocabulary stays useful.'],
+ ['Is this Kolkata or Dhaka Bengali?',
+  'The script is the same on both sides of the border, so the writing practice serves either. The phonetics under each word show Kolkata pronunciation, matching the rest of Kotha. Vocabulary is drawn from both West Bengal and Bangladesh, and a few sentences name each specifically.'],
+ ['Does it teach stroke order?',
+  'Not yet, and I would rather say so than pretend. It teaches letter shape through tracing, which is most of the battle. Stroke order lives in the script lab here on the site, and it is still being corrected.'],
+ ['How long will it take?',
+  'There are about a hundred pages of real exercises. At one letter page a day the alphabet takes roughly ten weeks. There is no schedule in the book and no reason to hurry.'],
+ ['Can I share or print it for a class?',
+  'Yes. Print it, copy it, hand it out.'],
+];
+
+function viewWorkbook(){
+  app().innerHTML = `<span class="crumb" onclick="location.hash='#/script'">${icon('back')} Back to the script</span>
+  <div class="app-head">
+    <h1>The writing workbook <span class="sc">হাতে-কলমে</span></h1>
+    <p>A hundred and fifty three pages of Bengali handwriting practice, built on the
+       vocabulary of politics, the economy and the land. Free, printable, yours.</p>
+  </div>
+
+  <div class="wb-hero">
+    <div class="wb-meta">
+      <div class="wb-stat"><b>153</b><span>pages</span></div>
+      <div class="wb-stat"><b>82</b><span>letters and signs</span></div>
+      <div class="wb-stat"><b>84</b><span>words</span></div>
+      <div class="wb-stat"><b>24</b><span>sentences</span></div>
+    </div>
+    <a class="btn btn-primary btn-lg" href="Writing-Bengali.pdf" download>
+      ${icon('down')} Download the PDF, 1.3 MB</a>
+    <p class="wb-note">Sized for a 13.3 inch e-ink tablet, and it prints on ordinary paper.</p>
+  </div>
+
+  <h2 class="wb-h">What is inside</h2>
+  <div class="wb-toc">
+    ${[['The hand','The writing line, the মাত্রা, and the basic pen movements every letter is built from.','4 pages'],
+       ['স্বরবর্ণ Vowels','All eleven, one page each: a model letter, two rows to trace, two to write, then a real word.','11 pages'],
+       ['কার Vowel signs','The ten signs that hang off a consonant, shown attached to ক because they never stand alone.','10 pages'],
+       ['ব্যঞ্জনবর্ণ Consonants','All thirty nine, including the nukta letters and the four marks.','39 pages'],
+       ['যুক্তাক্ষর Conjuncts','The twenty two joined letters you cannot read a newspaper without.','22 pages'],
+       ['সংখ্যা Numerals','Bengali figures, for prices, dates, percentages and seat counts.','3 pages'],
+       ['Words by hand','Eighty four words across politics, the economy and farming, traced then written.','21 pages'],
+       ['Sentences by hand','Twenty four sentences to copy, then write again from memory.','12 pages'],
+       ['Composition','Six guided pieces with word banks: describe a season, explain a panchayat, write to a councillor.','12 pages'],
+       ['Practice and reference','Free ruled pages, alphabet charts and an alphabetical word index.','19 pages']]
+      .map(([t,d,n])=>`<div class="wb-row"><div><h3>${t}</h3><p>${d}</p></div><span class="wb-n">${n}</span></div>`).join('')}
+  </div>
+
+  <h2 class="wb-h">Questions</h2>
+  <div class="wb-faq">
+    ${WB_FAQ.map(([q,a])=>`<details class="wb-q"><summary>${escapeHtml(q)}</summary><p>${escapeHtml(a)}</p></details>`).join('')}
+  </div>
+
+  <div class="wb-foot">
+    <p>Prefer to practise on screen? The <a onclick="location.hash='#/script'">script lab</a>
+       has every letter with audio and finger tracing.</p>
+  </div>`;
+}
+
 /* ---------- script lab (learn to write Bangla) ---------- */
 const SCRIPT_ALL = [
   ...SCRIPT.vowels.map(x=>({...x,sec:'Vowels'})),
@@ -757,6 +828,12 @@ function viewScript(){
   app().innerHTML=`<span class="crumb" onclick="location.hash='#/library'">Back to library</span>
     <div class="app-head"><h1>Learn the script <span class="sc">হাতের লেখা</span></h1>
       <p>Kotha teaches you to speak first. When you want the alphabet too, this is the writing pad. Tap a letter to hear it, see a word it lives in, and trace it with your finger.</p></div>
+    <button class="wb-promo" onclick="location.hash='#/workbook'">
+      <span class="wb-promo-ka">ক</span>
+      <span class="wb-promo-t"><b>Want to practise on paper?</b>
+        <span>A free 153 page handwriting workbook, sized for a tablet or a printer.</span></span>
+      ${icon('back','flip')}
+    </button>
     ${sect('Vowels','স্বরবর্ণ',SCRIPT.vowels)}
     ${sect('Consonants','ব্যঞ্জনবর্ণ',SCRIPT.consonants)}
     ${sect('Numerals','সংখ্যা',SCRIPT.numerals)}`;

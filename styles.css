@@ -644,3 +644,46 @@ html{scroll-behavior:auto}
 .src-note{background:var(--bg-2);border:2px solid var(--line);border-radius:var(--radius);
   padding:12px 14px;font-size:.88rem;color:var(--muted);margin:4px 0 16px}
 .stroke-hint{font-size:.86rem;font-weight:700;color:var(--bengali);margin-top:10px;min-height:1.2em}
+
+
+/* ---------- writing workbook page ---------- */
+.wb-hero{border:2px solid var(--line);background:var(--surface);padding:22px;margin:18px 0 6px;
+  box-shadow:var(--pop-2)}
+.wb-meta{display:flex;flex-wrap:wrap;gap:26px;margin-bottom:18px}
+.wb-stat{display:flex;flex-direction:column;line-height:1.1}
+.wb-stat b{font-family:var(--font-display);font-size:30px}
+.wb-stat span{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-faint);
+  font-weight:700;margin-top:2px}
+.btn-lg{font-size:16px;padding:13px 20px}
+.wb-note{font-size:13px;color:var(--text-faint);margin:12px 0 0}
+.wb-h{font-family:var(--font-display);font-size:22px;margin:30px 0 10px}
+.wb-toc{border:2px solid var(--line);background:var(--surface)}
+.wb-row{display:flex;gap:16px;align-items:flex-start;justify-content:space-between;
+  padding:13px 16px;border-bottom:1px solid var(--line-soft)}
+.wb-row:last-child{border-bottom:0}
+.wb-row h3{font-size:15px;margin:0 0 3px}
+.wb-row p{font-size:13.5px;color:var(--text-muted);margin:0;line-height:1.45}
+.wb-n{font-size:12px;font-weight:700;color:var(--text-faint);white-space:nowrap;padding-top:2px}
+.wb-faq{border:2px solid var(--line);background:var(--surface)}
+.wb-q{border-bottom:1px solid var(--line-soft)}
+.wb-q:last-child{border-bottom:0}
+.wb-q summary{cursor:pointer;padding:13px 16px;font-weight:700;font-size:14.5px;list-style:none}
+.wb-q summary::-webkit-details-marker{display:none}
+.wb-q summary::after{content:'+';float:right;font-weight:700;color:var(--text-faint)}
+.wb-q[open] summary::after{content:'\2212'}
+.wb-q p{margin:0;padding:0 16px 15px;font-size:14px;line-height:1.55;color:var(--text-muted)}
+.wb-foot{margin:26px 0 10px;font-size:14px;color:var(--text-muted)}
+.wb-foot a{cursor:pointer;text-decoration:underline}
+@media(max-width:520px){ .wb-meta{gap:18px} .wb-stat b{font-size:24px} }
+
+/* workbook promo on the script lab */
+.wb-promo{display:flex;align-items:center;gap:14px;width:100%;text-align:left;cursor:pointer;
+  border:2px solid var(--line);background:var(--surface);padding:13px 16px;margin:0 0 22px;
+  box-shadow:var(--pop-2);font:inherit;color:inherit}
+.wb-promo:hover{transform:translate(-1px,-1px)}
+.wb-promo-ka{font-family:var(--font-bengali,inherit);font-size:34px;line-height:1;
+  color:var(--accent);flex:none}
+.wb-promo-t{display:flex;flex-direction:column;gap:2px;flex:1}
+.wb-promo-t b{font-size:14.5px}
+.wb-promo-t span{font-size:13px;color:var(--text-muted);line-height:1.4}
+.wb-promo .icn{flex:none;color:var(--text-faint)}
