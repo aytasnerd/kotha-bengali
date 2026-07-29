@@ -765,7 +765,7 @@ function viewLetter(gi){ const x=SCRIPT_ALL[gi]; if(!x) return viewScript();
   const isNum=gi>=SCRIPT.vowels.length+SCRIPT.consonants.length;
   const steps = isNum
     ? ['Start at the top of the numeral.','Draw it in one flowing stroke where you can, top to bottom.','Numerals carry no matra headline.']
-    : ['Draw the body first, starting at the top and moving down.','Make the curves and bellies left to right, keeping the pen flowing.','The matra, the headline across the top, always runs left to right. Some letters take it first, others last, so follow the letter rather than a rule.','The animation is a shape guide traced from the letterform, not a taught stroke order.'];
+    : ['Draw the body first, starting at the top and moving down.','Make the curves and bellies left to right, keeping the pen flowing.','The matra, the headline across the top, always runs left to right. Some letters take it first, others last, so follow the stroke numbers rather than a rule.','Consonant stroke counts and matra position follow a Bengali handwriting workbook. Vowels are shape guides for now.'];
   app().innerHTML=`<span class="crumb" onclick="location.hash='#/script'">${icon('back')} All letters</span>
     <div class="letter-top">
       <div class="lt-glyph">${x.ch}</div>
@@ -782,7 +782,7 @@ function viewLetter(gi){ const x=SCRIPT_ALL[gi]; if(!x) return viewScript();
       <div id="shint" class="stroke-hint"></div>
       <div class="trace-actions">
         <button class="btn btn-ghost btn-sm" id="prev">${icon('back')} Prev</button>
-        <button class="btn btn-teal btn-sm" id="animate">Show the shape</button>
+        <button class="btn btn-teal btn-sm" id="animate">Show me</button>
         <button class="btn btn-ghost btn-sm" id="clr">Clear</button>
         <button class="btn btn-primary btn-sm" id="next">Next ${icon('back','flip')}</button>
       </div>
@@ -860,7 +860,9 @@ function initTrace(ch,matra){
   function frameHint(){
     if(!data) return;
     const h=$('#shint'); if(!h) return;
-    h.textContent = step<paths.length ? `Part ${step+1} of ${paths.length}. ${data.strokes[step].hint}` : 'Shape complete. Clear to try again.';
+    const w=data.order?'Stroke':'Part';
+    h.textContent = step<paths.length ? `${w} ${step+1} of ${paths.length}. ${data.strokes[step].hint}`
+      : (data.order?'All strokes done. Clear to try again.':'Shape complete. Clear to try again.');
   }
   function bg(){ ghostLetter(); if(paths) drawDone(step); used=false; if(el()){el().textContent='';el().className='trace-score';} frameHint(); }
   function animate(){

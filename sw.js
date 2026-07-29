@@ -1,4 +1,4 @@
-const C='kotha-v1785330022';
+const C='kotha-v1785330256';
 const ASSETS=['./','./app.html','./index.html','./styles.css','./app.js','./data.js','./strokes.js',
   './manifest.webmanifest','./icon.svg','./icon-192.png','./apple-touch-icon.png','./icon-512.png'];
 self.addEventListener('install',e=>{ self.skipWaiting();

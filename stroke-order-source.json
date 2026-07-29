@@ -1,0 +1,166 @@
+{
+"_note": "Stroke counts and matra position read from the Banjonborno workbook diagrams (kidsabcd.com). matra: first|last|none",
+"ক": {
+"n": 6,
+"matra": "first"
+},
+"খ": {
+"n": 6,
+"matra": "last"
+},
+"গ": {
+"n": 4,
+"matra": "last"
+},
+"ঘ": {
+"n": 5,
+"matra": "first"
+},
+"ঙ": {
+"n": 4,
+"matra": "none"
+},
+"চ": {
+"n": 4,
+"matra": "first"
+},
+"ছ": {
+"n": 6,
+"matra": "first"
+},
+"জ": {
+"n": 5,
+"matra": "first"
+},
+"ঝ": {
+"n": 7,
+"matra": "first"
+},
+"ঞ": {
+"n": 7,
+"matra": "none"
+},
+"ট": {
+"n": 5,
+"matra": "first"
+},
+"ঠ": {
+"n": 4,
+"matra": "first"
+},
+"ড": {
+"n": 4,
+"matra": "first"
+},
+"ঢ": {
+"n": 4,
+"matra": "first"
+},
+"ণ": {
+"n": 4,
+"matra": "last"
+},
+"ত": {
+"n": 3,
+"matra": "first"
+},
+"থ": {
+"n": 5,
+"matra": "last"
+},
+"দ": {
+"n": 4,
+"matra": "first"
+},
+"ধ": {
+"n": 6,
+"matra": "last"
+},
+"ন": {
+"n": 4,
+"matra": "first"
+},
+"প": {
+"n": 5,
+"matra": "last"
+},
+"ফ": {
+"n": 7,
+"matra": "first"
+},
+"ব": {
+"n": 4,
+"matra": "first"
+},
+"ভ": {
+"n": 4,
+"matra": "first"
+},
+"ম": {
+"n": 5,
+"matra": "first"
+},
+"য": {
+"n": 5,
+"matra": "first"
+},
+"র": {
+"n": 5,
+"matra": "first"
+},
+"ল": {
+"n": 5,
+"matra": "first"
+},
+"শ": {
+"n": 6,
+"matra": "last"
+},
+"ষ": {
+"n": 6,
+"matra": "first"
+},
+"স": {
+"n": 4,
+"matra": "first"
+},
+"হ": {
+"n": 4,
+"matra": "first"
+},
+"ড়": {
+"n": 5,
+"matra": "first",
+"inferred": true
+},
+"ঢ়": {
+"n": 5,
+"matra": "first",
+"inferred": true
+},
+"য়": {
+"n": 6,
+"matra": "first",
+"inferred": true
+},
+"ৎ": {
+"n": 2,
+"matra": "none",
+"inferred": true
+},
+"ং": {
+"n": 1,
+"matra": "none",
+"inferred": true
+},
+"ঃ": {
+"n": 2,
+"matra": "none",
+"inferred": true
+},
+"ঁ": {
+"n": 2,
+"matra": "none",
+"inferred": true
+}
+}
