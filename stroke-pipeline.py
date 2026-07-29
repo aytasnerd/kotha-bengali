@@ -109,11 +109,11 @@ def letter(ch):
                 int(max(H, W)*0.10))
     if not pix: return None
 
-    band = y0 + H*0.20
+    band = y0 + H*0.26
     def is_matra(s):
         yv = [p[0] for p in s]; xv = [p[1] for p in s]
-        return (np.median(yv) <= band and (max(yv)-min(yv)) <= 0.06*H
-                and (max(xv)-min(xv)) > 0.30*W)
+        return (np.median(yv) <= band and (max(yv)-min(yv)) <= 0.09*H
+                and (max(xv)-min(xv)) > 0.17*W)
 
     body, matra = [], []
     for c in components(pix):
