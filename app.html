@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kotha, learn spoken Bengali</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Space+Grotesk:wght@400;500;600;700&family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>(function(){var r=document.documentElement;r.dataset.theme=localStorage.getItem('kotha.theme')||'light';r.dataset.accent=localStorage.getItem('kotha.accent')||'indigo';})();</script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="app-nav">
+  <div class="app-nav-inner">
+    <a href="index.html" class="brand">Kotha <span class="sc">কথা</span></a>
+    <a data-nav="home"    onclick="location.hash='#/library'">Home</a>
+    <a data-nav="learn"   onclick="location.hash='#/story'">Learn</a>
+    <a data-nav="script"  onclick="location.hash='#/script'">Script</a>
+    <a data-nav="writing" onclick="location.hash='#/writing'">Writing</a>
+    <a data-nav="profile" onclick="location.hash='#/progress'">Profile</a>
+    <span class="theme-ctl" id="themectl"></span>
+    <span id="account"></span>
+  </div>
+</header>
+
+<main class="app-wrap"><div id="view"></div></main>
+
+<nav class="bottom-nav">
+  <a data-nav="home"    onclick="location.hash='#/library'">Home</a>
+  <a data-nav="learn"   onclick="location.hash='#/story'">Learn</a>
+  <a data-nav="script"  onclick="location.hash='#/script'">Script</a>
+  <a data-nav="profile" onclick="location.hash='#/progress'">Profile</a>
+</nav>
+
+<div class="pop-overlay" id="pop"></div>
+<div class="toast" id="toast"></div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

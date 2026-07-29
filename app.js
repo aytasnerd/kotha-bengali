@@ -1,0 +1,584 @@
+/* ==========================================================================
+   Kotha app engine. Hash-routed SPA, localStorage progress, browser TTS,
+   sign-in, script lab with tracing, guides, writing, games.
+   ========================================================================== */
+'use strict';
+
+/* ---------- custom icon set (stroke, no emoji) ---------- */
+const IC={
+  home:'<path d="M4 11 12 4l8 7"/><path d="M6 10v9h5v-5h2v5h5v-9"/>',
+  book:'<path d="M4 5a2 2 0 0 1 2-2h6v16H6a2 2 0 0 0-2 2z"/><path d="M20 5a2 2 0 0 0-2-2h-6v16h6a2 2 0 0 1 2 2z"/>',
+  pen:'<path d="M4 20h5l10-10-5-5L4 15z"/><path d="M13 6l5 5"/>',
+  feather:'<path d="M20 4C11 4 5 10 4 20l6-6"/><path d="M9.5 14.5H16"/>',
+  chart:'<path d="M4 20V4"/><path d="M4 20h16"/><path d="M8 17v-5"/><path d="M13 17V8"/><path d="M18 17v-8"/>',
+  speaker:'<path d="M11 5 6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/>',
+  check:'<path d="M20 6 9 17l-5-5"/>',
+  x:'<path d="M6 6l12 12M18 6 6 18"/>',
+  back:'<path d="M15 5 8 12l7 7"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6 19 19M19 5l-1.4 1.4M6.4 17.6 5 19"/>',
+  moon:'<path d="M20 14A8 8 0 1 1 10 4a6.5 6.5 0 0 0 10 10z"/>',
+  star:'<path d="M12 3l2.6 5.7 6.2.6-4.7 4.2 1.4 6.1L12 16.9 6.5 19.6l1.4-6.1L3.2 9.3l6.2-.6z"/>',
+  cards:'<rect x="3" y="8" width="13" height="12" rx="2"/><path d="M8 8V6a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>',
+  dice:'<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.1"/><circle cx="15" cy="15" r="1.1"/><circle cx="15" cy="9" r="1.1"/><circle cx="9" cy="15" r="1.1"/>',
+  people:'<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 5.2a3.2 3.2 0 0 1 0 5.6M20.5 19a5.5 5.5 0 0 0-4-5.3"/>',
+  bolt:'<path d="M13 3 5 13h6l-1 8 8-11h-6z"/>',
+  link:'<path d="M9.5 14.5 14.5 9.5"/><path d="M11 6.5 12 5.5a4 4 0 0 1 5.6 5.6l-1 1"/><path d="M13 17.5l-1 1a4 4 0 0 1-5.6-5.6l1-1"/>',
+  compass:'<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5 13 13l-4.5 2.5L11 11z"/>',
+};
+function icon(n,extra){ return `<svg class="icn ${extra||''}" viewBox="0 0 24 24" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n]||''}</svg>`; }
+const SPK = icon('speaker');
+const GLOGO = '<svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
+
+/* ---------- theme (light/dark x indigo/red) ---------- */
+const THEME_KEY='kotha.theme', ACCENT_KEY='kotha.accent';
+function curTheme(){ return localStorage.getItem(THEME_KEY)||'light'; }
+function curAccent(){ return localStorage.getItem(ACCENT_KEY)||'indigo'; }
+function applyTheme(){ const r=document.documentElement; r.dataset.theme=curTheme(); r.dataset.accent=curAccent(); }
+function renderThemeCtl(){ const el=document.getElementById('themectl'); if(!el) return;
+  el.innerHTML=`<button class="tbtn" id="ttheme" title="Light or dark">${icon(curTheme()==='dark'?'sun':'moon')}</button>
+    <button class="tbtn accent-dot" id="taccent" title="Accent colour"></button>`;
+  el.querySelector('#ttheme').onclick=()=>{ localStorage.setItem(THEME_KEY,curTheme()==='light'?'dark':'light'); applyTheme(); renderThemeCtl(); };
+  el.querySelector('#taccent').onclick=()=>{ localStorage.setItem(ACCENT_KEY,curAccent()==='indigo'?'red':'indigo'); applyTheme(); renderThemeCtl(); };
+}
+
+/* ---------- story track + name personalization ---------- */
+function getTrack(){ return TRACKS.find(t=>t.id===state.track)||null; }
+function protName(){ const t=getTrack(); return t?t.name:'Kabir'; }
+function PZ(s){ if(!s) return s; const t=getTrack(); if(!t||t.id==='love') return s;
+  return s.split('Kabir').join(t.name).split('কবির').join(t.nameSc).split('kobir').join(t.namePh); }
+function pzPhrase(p){ return {r:PZ(p.r), sc:PZ(p.sc), en:PZ(p.en), ph:PZ(p.ph), words:p.words}; }
+function setTrack(id){ state.track=id; save(); location.hash='#/story'; }
+
+/* ---------- state ---------- */
+const KEY = 'kotha.v1';
+function today(){ const d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+const state = load();
+function load(){
+  let s={};
+  try{ s = JSON.parse(localStorage.getItem(KEY)) || {}; }catch(e){}
+  const st = {
+    learned:new Set(s.learned||[]), words:new Set(s.words||[]), days:new Set(s.days||[]),
+    newToday:s.newToday||0, revisited:s.revisited||0, seconds:s.seconds||0,
+    date:s.date||today(), user:s.user||null, track:s.track||null,
+  };
+  if(st.date!==today()){ st.newToday=0; st.revisited=0; st.date=today(); }
+  return st;
+}
+function save(){
+  localStorage.setItem(KEY, JSON.stringify({
+    learned:[...state.learned], words:[...state.words], days:[...state.days],
+    newToday:state.newToday, revisited:state.revisited, seconds:state.seconds,
+    date:state.date, user:state.user, track:state.track,
+  }));
+}
+function collectWord(r){ if(r && !state.words.has(r)){ state.words.add(r); save(); } }
+function learnPhrase(id){
+  if(!state.learned.has(id)){ state.learned.add(id); state.newToday++; } else state.revisited++;
+  (PHRASES[id].words||[]).forEach(collectWord); save();
+}
+
+/* ---------- helpers ---------- */
+const $ = (s,el=document)=>el.querySelector(s);
+const app = ()=>document.getElementById('view');
+const norm = s => s.toLowerCase().replace(/[.,?!]/g,'').trim();
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),1700); }
+function escapeHtml(s){ return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+/* ---------- audio ---------- */
+let bnVoice=null;
+function pickVoice(){ const vs=speechSynthesis.getVoices(); bnVoice = vs.find(v=>/bn|bengali|bangla/i.test(v.lang+v.name)) || vs.find(v=>/hi-IN|hi_IN/i.test(v.lang)) || null; }
+if('speechSynthesis' in window){ pickVoice(); speechSynthesis.onvoiceschanged=pickVoice; }
+function speak(text){ if(!('speechSynthesis' in window)){ toast('Audio is not available in this browser'); return; }
+  speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.lang='bn-IN'; u.rate=.82; if(bnVoice) u.voice=bnVoice; speechSynthesis.speak(u); }
+
+/* ---------- tappable words ---------- */
+function tapify(roman, keys){
+  if(!keys||!keys.length) return escapeHtml(roman);
+  let html = escapeHtml(roman); const seen=new Set();
+  keys.forEach(k=>{
+    if(seen.has(k)) return; seen.add(k);
+    if(!WORDS.find(x=>x.r===k)) return;
+    const pat = k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/_/g,'\\s+');
+    const re = new RegExp('\\b('+pat+')\\b','i');
+    html = html.replace(re, m=>`<span class="word" data-w="${k}">${m}</span>`);
+  });
+  return html;
+}
+document.addEventListener('click', e=>{ const w=e.target.closest('.word'); if(w) openWord(w.dataset.w); });
+
+function openWord(r){
+  const w = WORDS.find(x=>x.r===r); if(!w) return; collectWord(r);
+  const seen = Object.values(PHRASES).filter(p=>(p.words||[]).includes(r)).slice(0,4);
+  const ov=$('#pop');
+  ov.innerHTML = `<div class="popover">
+    <div class="row"><div>
+      <div class="pop-rm">${w.r}</div>
+      ${w.ph?`<div class="pop-ph">${w.ph}</div>`:''}
+      <div class="pop-sc">${w.sc}</div>
+      <div class="pop-en">${w.en}</div>
+    </div><button class="x" aria-label="close">&times;</button></div>
+    <div style="margin-top:12px"><button class="speak-btn" data-say="${w.sc}">${SPK} Listen</button></div>
+    ${w.note?`<div class="pop-note">${w.note}</div>`:''}
+    ${seen.length?`<div class="pop-seen"><h5>Where it turns up</h5>${seen.map(p=>`<div class="ex"><span class="bn">${p.r}</span> ${p.en}</div>`).join('')}</div>`:''}
+  </div>`;
+  ov.classList.add('open');
+  $('.x',ov).onclick=()=>ov.classList.remove('open');
+  $('.speak-btn',ov).onclick=e=>speak(e.currentTarget.dataset.say);
+  ov.onclick=e=>{ if(e.target===ov) ov.classList.remove('open'); };
+}
+
+/* ---------- prose renderer for guides / blog ---------- */
+function renderProse(body){
+  const lines=body.split('\n'); let html='', para=[];
+  const flush=()=>{ if(para.length){ html+=`<p>${para.join(' ')}</p>`; para=[]; } };
+  lines.forEach(ln=>{ const t=ln.trim();
+    if(!t){ flush(); return; }
+    if(t.includes(' | ')){ flush(); const [r,sc,en]=t.split('|').map(s=>s.trim());
+      html+=`<div class="ex-row"><button class="ex-say" data-say="${sc}">${SPK}</button><span class="ex-r">${escapeHtml(r)}</span><span class="ex-sc">${sc}</span><span class="ex-en">${escapeHtml(en)}</span></div>`;
+    } else para.push(escapeHtml(t));
+  });
+  flush(); return html;
+}
+function wireSay(scope){ (scope||document).querySelectorAll('[data-say]').forEach(b=>{ if(b._s) return; b._s=1; b.addEventListener('click',()=>speak(b.dataset.say)); }); }
+
+/* ---------- account / sign-in ---------- */
+function renderAccount(){
+  const el=$('#account'); if(!el) return;
+  if(state.user){ el.innerHTML=`<span class="acct"><span class="acct-av">${escapeHtml(state.user.name[0])}</span><button class="acct-out" id="signout">Sign out</button></span>`;
+    $('#signout').onclick=()=>{ state.user=null; save(); renderAccount(); toast('Signed out'); };
+  } else { el.innerHTML=`<button class="btn btn-primary btn-sm" id="signin">Sign in</button>`; $('#signin').onclick=openSignin; }
+}
+function openSignin(){
+  const ov=$('#pop');
+  ov.innerHTML=`<div class="popover signin">
+    <button class="x" aria-label="close">&times;</button>
+    <h3 style="margin-bottom:4px">Sign in to Kotha</h3>
+    <p class="muted" style="font-size:.95rem">The whole library is open without an account. Signing in only saves the story, your progress, and your word album for next time. No password to invent.</p>
+    <button class="gbtn" id="gbtn">${GLOGO}<span>Continue with Google</span></button>
+    <p class="signin-note">This build signs you in locally on this device so you can try the flow. To connect real Google sign-in, drop a Google Identity client ID into the sign-in hook (see README.md).</p>
+  </div>`;
+  ov.classList.add('open');
+  $('.x',ov).onclick=()=>ov.classList.remove('open');
+  ov.onclick=e=>{ if(e.target===ov) ov.classList.remove('open'); };
+  $('#gbtn',ov).onclick=()=>{ state.user={name:'Kabir', email:'you@example.com'}; save(); ov.classList.remove('open'); renderAccount(); toast('Signed in. Your progress will be saved.'); };
+}
+
+/* ============================ ROUTER ============================ */
+const NAVGROUP = { '':'home', library:'home', album:'home', games:'home', game:'home', people:'home',
+  guides:'home', guide:'home', story:'learn', day:'learn', scene:'learn',
+  script:'script', letter:'script', writing:'writing', post:'writing', progress:'profile' };
+function router(){
+  const h=location.hash.replace(/^#\/?/,''); const [base,arg]=h.split('/'); window.scrollTo(0,0);
+  const map={ '':viewLibrary, library:viewLibrary, story:viewStory, album:viewAlbum, games:viewGames,
+    people:viewPeople, progress:viewProgress, guides:viewGuides, writing:viewWriting, script:viewScript };
+  if(base==='day') viewPlayer(arg);
+  else if(base==='game') viewGame(arg);
+  else if(base==='guide') viewGuideDetail(arg);
+  else if(base==='post') viewPost(arg);
+  else if(base==='letter') viewLetter(+arg);
+  else if(base==='scene') viewScene(arg);
+  else (map[base]||viewLibrary)();
+  document.querySelectorAll('[data-nav]').forEach(a=>a.classList.toggle('active', a.dataset.nav===(NAVGROUP[base]||'home')));
+  wireSay(app());
+}
+window.addEventListener('hashchange', router);
+
+/* ============================ VIEWS ============================ */
+function wordOfDay(){ const d=new Date(); const doy=Math.floor((d-new Date(d.getFullYear(),0,0))/864e5);
+  const pool=WORDS.filter(w=>w.pack==='feel'||w.pack==='food'||w.pack==='city'); return pool[doy%pool.length]; }
+
+function viewLibrary(){
+  const wod=wordOfDay();
+  const nLetters=SCRIPT.vowels.length+SCRIPT.consonants.length+SCRIPT.numerals.length;
+  const shelves=[
+    {ic:'book', t:'The story',    p:'Sixty days in Kolkata, played one chapter at a time.', c:DAYS.length+' chapters', go:'#/story'},
+    {ic:'cards',t:'Word Album',   p:'Every word you meet becomes a card you collect.', c:state.words.size+'/'+WORDS.length+' collected', go:'#/album'},
+    {ic:'pen',  t:'Read & write', p:'The Bengali script: read it, hear it, and trace every letter.', c:nLetters+' letters', go:'#/script'},
+    {ic:'dice', t:'Games',        p:'Quick rounds built from the words you have met.', c:GAMES.length+' games', go:'#/games'},
+    {ic:'people',t:'People',      p:'Everyone speaks to you a little differently.', c:PEOPLE.length+' people', go:'#/people'},
+    {ic:'compass',t:'Guides',     p:'Plain explanations of the parts that trip people up.', c:GUIDES.length+' guides', go:'#/guides'},
+    {ic:'feather',t:'Writing',    p:'Notes on how the chapters were built, and how to learn to speak.', c:BLOG.length+' essays', go:'#/writing'},
+    {ic:'chart',t:'Your progress',p:'Time spent, words held, people met.', c:'', go:'#/progress'},
+  ];
+  app().innerHTML=`
+    <div class="app-head"><h1>Library <span class="sc">লাইব্রেরি</span></h1>
+      <p>Find your own way in. Every shelf is a door, and the doors connect.</p></div>
+    <div class="today-card">
+      <div><div class="sub">Word of the day</div>
+        <div class="wod">${wod.r} <span class="sc">${wod.sc}</span></div>
+        <div class="gloss">${wod.ph||''} &nbsp; ${wod.en}</div></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="cta" data-say="${wod.sc}">${SPK} Listen</button>
+        <button class="cta" onclick="location.hash='#/game/opposites'">60-second game</button></div>
+    </div>
+    <div class="shelf-grid">${shelves.map(s=>`<button class="shelf" onclick="location.hash='${s.go}'">
+      <span class="ico">${icon(s.ic)}</span><h3>${s.t}</h3><p>${s.p}</p>${s.c?`<span class="count">${s.c}</span>`:''}</button>`).join('')}</div>`;
+}
+
+function dayRow(d){ const done=state.days.has(d.id);
+  return `<button class="day-row ${done?'complete':''} ${d.milestone?'milestone':''}" onclick="location.hash='#/day/${d.id}'">
+    <div class="dn"><small>DAY</small>${d.day}</div>
+    <div><h4>${d.milestone?`<span class="mile-tag">${icon('star')}</span>`:''}${d.title}</h4><div class="meta">${d.place}. ${d.person}. ${d.phrases.length} phrases</div></div>
+    <div>${done?`<span class="done">${icon('check')} done</span>`:'<span class="pdot"></span>'}</div></button>`; }
+function chooseStory(){ state.track=null; save(); router(); }
+function viewTrackChooser(){
+  app().innerHTML=`<span class="crumb" onclick="location.hash='#/library'">${icon('back')} Library</span>
+    <div class="app-head"><h1>Choose your story <span class="sc">গল্প বেছে নাও</span></h1>
+      <p>Same sixty days in Kolkata, the same city full of people to talk to. Pick the reason that fits you. You can change it any time.</p></div>
+    <div class="track-grid">${TRACKS.map(t=>`<button class="track-card ${state.track===t.id?'sel':''}" onclick="setTrack('${t.id}')">
+      <div class="tk-label">${t.label}</div><div class="tk-tag">${t.tagline}</div><p>${t.who}</p><div class="tk-rel">${t.rel}</div></button>`).join('')}</div>`;
+}
+function viewStory(){
+  if(!state.track) return viewTrackChooser();
+  const t=getTrack();
+  const sections=UNITS.map(u=>{ const days=DAYS.filter(d=>d.unit===u.id); if(!days.length) return '';
+    const done=days.filter(d=>state.days.has(d.id)).length;
+    return `<div class="unit-head"><div><span class="unit-bn script">${u.bn}</span><h3>${u.title}</h3><p>${u.sub}</p></div>
+      <span class="unit-prog">${done}/${days.length}</span></div><div class="day-list">${days.map(dayRow).join('')}</div>`; }).join('');
+  app().innerHTML=`<span class="crumb" onclick="location.hash='#/library'">${icon('back')} Library</span>
+    <div class="track-strip"><span>Your story: <b>${t.label}</b>. You play <b>${t.name}</b>. ${t.rel}</span>
+      <button class="mini-link" onclick="chooseStory()">Change</button></div>
+    <div class="app-head"><h1>The story <span class="sc">গল্প</span></h1>
+      <p>${t.who} ${t.d30} ${t.d60}</p></div>
+    ${sections}`;
+}
+
+/* ---------- player ---------- */
+let P=null;
+function viewPlayer(id){ const day=DAYS.find(d=>d.id===id); if(!day) return viewStory();
+  const steps=[{type:'scene'}];
+  day.phrases.forEach(pid=>{ steps.push({type:'expose',pid},{type:'recognize',pid},{type:'build',pid},{type:'free',pid}); });
+  if(DIALOGUES[day.id]) steps.push({type:'dialogue'});
+  steps.push({type:'done'});
+  P={day,steps,i:0,t0:Date.now()}; renderStep();
+}
+function pct(){ return Math.round(P.i/(P.steps.length-1)*100); }
+function nextStep(){ P.i++; renderStep(); wireSay(app()); }
+function renderStep(){
+  const s=P.steps[P.i], day=P.day;
+  const shell=inner=>`<span class="crumb" onclick="location.hash='#/story'">All chapters</span>
+    <div class="scene ${day.milestone?'scene-gold':''}"><div class="where">Day ${day.day}. ${day.place}</div><h2>${day.title}</h2></div>
+    <div class="player"><div class="pbar"><i style="width:${pct()}%"></i></div>${inner}</div>`;
+
+  if(s.type==='scene'){ const paras=Array.isArray(day.scene)?day.scene:[day.scene];
+    app().innerHTML=shell(`${day.milestone?'<div class="milestone-banner">Milestone chapter</div>':''}
+      <div class="rung-label"><span class="pip"></span>The scene</div>
+      ${paras.map(p=>`<p style="font-size:1.1rem;color:var(--text-body);margin-bottom:16px">${escapeHtml(PZ(p))}</p>`).join('')}
+      <div class="player-actions"><button class="btn btn-teal" id="go">Start the scene</button></div>`);
+    $('#go').onclick=nextStep; return; }
+
+  if(s.type==='done'){ const first=!state.days.has(day.id); state.days.add(day.id);
+    day.phrases.forEach(learnPhrase); state.seconds+=Math.min(900,Math.round((Date.now()-P.t0)/1000)); save();
+    app().innerHTML=shell(`<div class="done-card"><div class="done-mark"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div><h2>Chapter done</h2>
+      <p class="muted">You worked through ${day.phrases.length} phrases with ${day.person}. ${first?'New cards were added to your album.':'A review. They will come back later, spaced out.'}</p>
+      <div class="player-actions" style="justify-content:center;margin-top:20px">
+        <button class="btn btn-primary" onclick="location.hash='#/story'">Back to the story</button>
+        <button class="btn btn-ghost" onclick="location.hash='#/album'">See the album</button></div></div>`);
+    return; }
+
+  if(s.type==='dialogue'){ const lines=DIALOGUES[day.id];
+    app().innerHTML=shell(`<div class="rung-label"><span class="pip"></span>In the scene. The whole conversation</div>
+      <div class="dlg">${lines.map(l=>`<div class="dline ${l.who==='Kabir'?'me':''}">
+        <div class="dwho">${escapeHtml(PZ(l.who))}</div>
+        <div class="dbody"><button class="ex-say" data-say="${PZ(l.sc)}">${SPK}</button>
+          <div class="dr">${escapeHtml(PZ(l.r))}</div><div class="dsc">${PZ(l.sc)}</div><div class="den">${escapeHtml(PZ(l.en))}</div></div></div>`).join('')}</div>
+      <div class="player-actions"><button class="btn btn-teal" id="go">Finish chapter</button></div>`);
+    $('#go').onclick=nextStep; return; }
+
+  const p=pzPhrase(PHRASES[s.pid]);
+  if(s.type==='expose'){
+    app().innerHTML=shell(`<div class="rung-label"><span class="pip"></span>Meet the phrase</div>
+      <div class="q-en">${escapeHtml(p.en)}</div>
+      <div class="q-sc">${p.sc}</div>
+      <div class="q-roman">${tapify(p.r,p.words)}</div>
+      ${p.ph?`<div class="q-ph">${p.ph}</div>`:''}
+      <button class="speak-btn" data-say="${p.sc}">${SPK} Listen</button>
+      <p class="q-hint" style="margin-top:16px">Tap any underlined word to open it, then say the line out loud.</p>
+      <div class="player-actions"><button class="btn btn-teal" id="go">Got it</button></div>`);
+    $('.speak-btn').onclick=()=>speak(p.sc); $('#go').onclick=nextStep; speak(p.sc); return; }
+
+  if(s.type==='recognize'){
+    const opts=shuffle([p.en, ...shuffle(Object.values(PHRASES).filter(x=>x.en!==p.en)).slice(0,3).map(x=>PZ(x.en))]);
+    app().innerHTML=shell(`<div class="rung-label"><span class="pip"></span>What did that mean?</div>
+      <div class="q-roman">${escapeHtml(p.r)}</div>
+      <button class="speak-btn" data-say="${p.sc}">${SPK} Listen again</button>
+      <div class="opts" id="opts">${opts.map(o=>`<button class="opt">${escapeHtml(o)}</button>`).join('')}</div><div id="fb"></div>`);
+    $('.speak-btn').onclick=()=>speak(p.sc); speak(p.sc);
+    $('#opts').querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+      const opts=$('#opts').querySelectorAll('.opt'); opts.forEach(x=>x.style.pointerEvents='none');
+      if(b.textContent===p.en){ b.classList.add('correct'); $('#fb').innerHTML=`<div class="feedback ok">Right.</div>`; setTimeout(nextStep,650); }
+      else { b.classList.add('wrong'); opts.forEach(x=>{ if(x.textContent===p.en) x.classList.add('correct'); }); $('#fb').innerHTML=`<div class="feedback no">The right one is highlighted. Moving on.</div>`; setTimeout(nextStep,1300); }
+    }); return; }
+
+  if(s.type==='build'){
+    const tokens=p.r.replace(/[.?!,]/g,'').split(/\s+/); const pool=shuffle(tokens.map((t,i)=>({t,i})));
+    app().innerHTML=shell(`<div class="rung-label"><span class="pip"></span>Build it</div>
+      <div class="q-en">${escapeHtml(p.en)}</div><div class="q-sc" style="font-size:1.15rem;opacity:.75">${p.sc}</div>
+      <div class="answer-slot" id="slot"></div>
+      <div class="tiles" id="pool">${pool.map(o=>`<button class="tile" data-i="${o.i}">${escapeHtml(o.t)}</button>`).join('')}</div>
+      <div id="fb"></div><div class="player-actions"><button class="btn btn-ghost btn-sm" id="clear">Clear</button></div>`);
+    const chosen=[], slot=$('#slot'), fb=$('#fb');
+    const refresh=()=>{ slot.innerHTML=chosen.map(c=>`<span class="tile">${escapeHtml(c.t)}</span>`).join('');
+      if(chosen.length===tokens.length){ const ok=chosen.map(c=>norm(c.t)).join(' ')===tokens.map(norm).join(' ');
+        if(ok){ fb.innerHTML=`<div class="feedback ok">${escapeHtml(p.r)}. That is it.</div>`; speak(p.sc); setTimeout(nextStep,900); }
+        else fb.innerHTML=`<div class="feedback no">Not quite. Tap Clear and try the order again.</div>`;
+      } else fb.innerHTML=''; };
+    $('#pool').querySelectorAll('.tile').forEach(b=>b.onclick=()=>{ b.classList.add('used'); chosen.push({t:b.textContent}); refresh(); });
+    $('#clear').onclick=()=>{ chosen.length=0; $('#pool').querySelectorAll('.tile').forEach(x=>x.classList.remove('used')); refresh(); };
+    return; }
+
+  if(s.type==='free'){
+    app().innerHTML=shell(`<div class="rung-label"><span class="pip"></span>Say it from memory</div>
+      <div class="q-en">${escapeHtml(p.en)}</div>
+      <p class="q-hint">Say the Bengali out loud before you reveal it.</p>
+      <div id="rev"></div>
+      <div class="player-actions"><button class="btn btn-ghost" id="hint">Hint</button><button class="btn btn-teal" id="show">Reveal</button></div>`);
+    $('#hint').onclick=()=>{ $('#rev').innerHTML=`<div class="hint-first">Starts with: <b>${escapeHtml(p.r.split(/\s+/)[0])}</b></div>`; };
+    $('#show').onclick=()=>{ speak(p.sc);
+      app().querySelector('.player').innerHTML=`<div class="pbar"><i style="width:${pct()}%"></i></div>
+        <div class="rung-label"><span class="pip"></span>Say it from memory</div>
+        <div class="q-en">${escapeHtml(p.en)}</div>
+        <div class="reveal-box"><div class="r">${escapeHtml(p.r)}</div><div class="s">${p.sc}</div>${p.ph?`<div class="q-ph" style="margin-top:4px">${p.ph}</div>`:''}</div>
+        <div class="player-actions"><button class="speak-btn" data-say="${p.sc}">${SPK} Listen</button><button class="btn btn-teal" id="ok">I said it</button></div>`;
+      $('.speak-btn').onclick=()=>speak(p.sc); $('#ok').onclick=nextStep; wireSay(app()); };
+    return; }
+}
+
+/* ---------- scene replay (from People / library) ---------- */
+function viewScene(id){ const day=DAYS.find(d=>d.id===id); if(!day||!DIALOGUES[id]) return viewStory();
+  app().innerHTML=`<span class="crumb" onclick="location.hash='#/story'">All chapters</span>
+    <div class="app-head"><h1>${day.title} <span class="muted" style="font-size:1rem;font-weight:700">Day ${day.day}</span></h1><p>${day.place}. With ${day.person}.</p></div>
+    <div class="dlg">${DIALOGUES[id].map(l=>`<div class="dline ${l.who==='Kabir'?'me':''}"><div class="dwho">${escapeHtml(l.who)}</div>
+      <div class="dbody"><button class="ex-say" data-say="${l.sc}">${SPK}</button><div class="dr">${escapeHtml(l.r)}</div><div class="dsc">${l.sc}</div><div class="den">${escapeHtml(l.en)}</div></div></div>`).join('')}</div>
+    <div class="player-actions" style="margin-top:20px"><button class="btn btn-primary" onclick="location.hash='#/day/${id}'">Practise this chapter</button></div>`;
+}
+
+/* ---------- word browser (open library, nothing locked) ---------- */
+let albumFilter='all', albumQ='';
+function viewAlbum(){
+  const filters=[{id:'all',name:'All words'}].concat(PACKS.map(p=>({id:p.id,name:p.name})));
+  const q=albumQ.trim().toLowerCase();
+  const list=WORDS.filter(w=>(albumFilter==='all'||w.pack===albumFilter) &&
+    (!q || w.r.toLowerCase().includes(q) || w.en.toLowerCase().includes(q) || w.sc.includes(albumQ.trim())));
+  app().innerHTML=`<span class="crumb" onclick="location.hash='#/library'">${icon('back')} Library</span>
+    <div class="app-head"><h1>Words <span class="sc">শব্দ</span></h1>
+      <p>The whole vocabulary, open to wander. Nothing is locked. Search in English, in romanized Bengali, or in Bangla script, then tap a word to hear it and see where it turns up.</p></div>
+    <div class="searchbar"><input id="wq" type="search" placeholder="Search: water, jol, or জল" value="${escapeHtml(albumQ)}" autocomplete="off">
+      <span class="searchcount">${list.length} of ${WORDS.length}</span></div>
+    <div class="filter-row">${filters.map(f=>`<button class="filter ${albumFilter===f.id?'active':''}" data-f="${f.id}">${escapeHtml(f.name)}</button>`).join('')}</div>
+    ${list.length?`<div class="wgrid">${list.map(w=>{ const got=state.words.has(w.r);
+      return `<button class="wcard" data-w="${w.r}">${got?`<span class="lvl">${icon('check')}</span>`:''}
+        <div class="rm">${escapeHtml(w.r)}</div><div class="sc">${w.sc}</div>
+        ${w.ph?`<div class="wph">${escapeHtml(w.ph)}</div>`:''}
+        <div class="en">${escapeHtml(w.en)}</div></button>`; }).join('')}</div>`
+      :`<p class="muted center" style="padding:30px 0">Nothing matches that. Try another spelling.</p>`}
+    <p class="muted center" style="margin-top:22px">A tick marks a word you have already met in the story.</p>`;
+  const inp=$('#wq');
+  inp.oninput=()=>{ albumQ=inp.value; const pos=inp.selectionStart; viewAlbum(); const n=$('#wq'); n.focus(); n.setSelectionRange(pos,pos); };
+  document.querySelectorAll('.filter').forEach(b=>b.onclick=()=>{ albumFilter=b.dataset.f; viewAlbum(); });
+  document.querySelectorAll('.wcard').forEach(b=>b.onclick=()=>openWord(b.dataset.w));
+}
+
+/* ---------- games ---------- */
+const W=r=>WORDS.find(x=>x.r===r);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const GAMES=[
+  {id:'opposites', ic:'bolt',    name:'Opposites Sprint', desc:'Tap the opposite. bhalo to kharap.'},
+  {id:'match',     ic:'link',    name:'Meaning Match',    desc:'Pair each Bengali word with its English.'},
+  {id:'listen',    ic:'speaker', name:'Ear Training',     desc:'Hear the Bengali, choose what it means.'},
+  {id:'read',      ic:'book',    name:'Read the Script',  desc:'See the Bengali letters, choose the meaning.'},
+  {id:'recall',    ic:'star',    name:'Word Rush',        desc:'See the English, pick the Bengali fast.'},
+  {id:'register',  ic:'people',  name:'Tui or Aapni',     desc:'Pick the right you for each person.'},
+];
+function viewGames(){ app().innerHTML=`<span class="crumb" onclick="location.hash='#/library'">${icon('back')} Library</span>
+  <div class="app-head"><h1>Games <span class="sc">খেলা</span></h1><p>Quick rounds built from the words you have met.</p></div>
+  <div class="grid grid-2">${GAMES.map(g=>`<button class="game-card" onclick="location.hash='#/game/${g.id}'"><span class="ico">${icon(g.ic)}</span><h3>${g.name}</h3><p>${g.desc}</p></button>`).join('')}</div>`; }
+function viewGame(w){ const m={opposites:gOpposites,match:gameMatch,listen:gListen,read:gRead,recall:gRecall,register:gRegister}; (m[w]||viewGames)(); }
+
+/* generic multiple-choice runner */
+function mcqGame(cfg){ let idx=0,score=0; const n=cfg.rounds||6;
+  function round(){
+    if(idx>=n){ app().innerHTML=`<span class="crumb" onclick="location.hash='#/games'">${icon('back')} Games</span>
+      <div class="done-card"><div class="done-mark">${icon('check')}</div><h2>${score} / ${n}</h2><p class="muted">${cfg.title} complete.</p>
+      <div class="player-actions" style="justify-content:center;margin-top:18px"><button class="btn btn-primary" id="again">Play again</button><button class="btn btn-ghost" onclick="location.hash='#/games'">Back</button></div></div>`;
+      $('#again').onclick=()=>mcqGame(cfg); return; }
+    const r=cfg.make();
+    app().innerHTML=`<span class="crumb" onclick="location.hash='#/games'">${icon('back')} Games</span>
+      <div class="game-hud"><span>Round ${idx+1} / ${n}</span><span class="score">Score ${score}</span></div>
+      <div class="player"><div class="rung-label"><span class="pip"></span>${cfg.sub}</div>${r.html}
+        ${r.say?`<button class="speak-btn" data-say="${r.say}">${SPK} Listen</button>`:''}
+        <div class="opts" id="opts">${r.options.map((o,i)=>`<button class="opt" data-i="${i}">${o.html}</button>`).join('')}</div></div>`;
+    if(r.say) speak(r.say); wireSay(app());
+    $('#opts').querySelectorAll('.opt').forEach(b=>b.onclick=()=>{ const o=r.options[+b.dataset.i], opts=$('#opts').querySelectorAll('.opt');
+      opts.forEach(x=>x.style.pointerEvents='none');
+      if(o.ok){ b.classList.add('correct'); score++; } else { b.classList.add('wrong'); opts.forEach((x,i)=>{ if(r.options[i].ok) x.classList.add('correct'); }); }
+      idx++; setTimeout(round,720); });
+  }
+  round();
+}
+const wOpt=(w,ok)=>({html:`${w.r} <span class="script">${w.sc}</span> <span class="muted">${w.en}</span>`,ok});
+const enOpt=(w,ok)=>({html:escapeHtml(w.en),ok});
+function distract(w,key){ return shuffle(WORDS.filter(x=>x[key]!==w[key])).slice(0,3); }
+function gOpposites(){ mcqGame({title:'Opposites Sprint',sub:'What is the opposite of',make:()=>{
+  const pair=pick(OPPOSITES); const [a,b]=shuffle(pair.slice()); const wA=W(a),wB=W(b);
+  const options=shuffle([wOpt(wB,true),...shuffle(WORDS.filter(w=>w.r!==a&&w.r!==b)).slice(0,3).map(w=>wOpt(w,false))]);
+  return {html:`<div class="q-roman">${wA.r} <span class="q-sc" style="display:inline">${wA.sc}</span></div><div class="q-hint">${wA.en}</div>`,say:wA.sc,options};
+}}); }
+function gListen(){ mcqGame({title:'Ear Training',sub:'Listen, then choose the meaning',make:()=>{
+  const w=pick(WORDS); const options=shuffle([enOpt(w,true),...distract(w,'en').map(x=>enOpt(x,false))]);
+  return {html:`<div class="q-hint">Tap Listen, then choose what it means.</div>`,say:w.sc,options};
+}}); }
+function gRead(){ mcqGame({title:'Read the Script',sub:'Read the Bengali, choose the meaning',make:()=>{
+  const w=pick(WORDS); const options=shuffle([enOpt(w,true),...distract(w,'en').map(x=>enOpt(x,false))]);
+  return {html:`<div class="q-sc" style="font-size:2.6rem;margin-bottom:6px">${w.sc}</div>`,say:w.sc,options};
+}}); }
+function gRecall(){ mcqGame({title:'Word Rush',sub:'See the English, pick the Bengali',make:()=>{
+  const w=pick(WORDS); const opt=(x,ok)=>({html:`${x.r} <span class="script">${x.sc}</span>`,ok});
+  const options=shuffle([opt(w,true),...distract(w,'r').map(x=>opt(x,false))]);
+  return {html:`<div class="q-en">${escapeHtml(w.en)}</div>`,options};
+}}); }
+function gRegister(){ mcqGame({title:'Tui or Aapni',sub:'Which "you" fits this person?',make:()=>{
+  const pp=pick(PEOPLE); const options=shuffle(['tui','tumi','aapni'].map(r=>({html:`<b class="bn">${r}</b>`,ok:r===pp.reg})));
+  return {html:`<div class="q-en">${escapeHtml(pp.name)} <span class="sc" style="font-family:var(--font-bengali);color:var(--muted);font-size:.7em">${pp.sc}</span></div><div class="q-hint">${escapeHtml(pp.role)}</div>`,options};
+}}); }
+function gameMatch(){ const picks=shuffle(WORDS.filter(w=>w.pack!=='core')).slice(0,5); const left=shuffle(picks),right=shuffle(picks); let sel=null,done=0;
+  app().innerHTML=`<span class="crumb" onclick="location.hash='#/games'">${icon('back')} Games</span>
+    <div class="app-head"><h1>Meaning Match</h1><p>Tap a Bengali word, then its English. Clear all five.</p></div>
+    <div class="match-grid"><div class="match-col" id="L">${left.map(w=>`<button class="match-btn roman" data-r="${w.r}">${w.r}<br><span class="sc" style="font-size:.9em;opacity:.75">${w.sc}</span></button>`).join('')}</div>
+    <div class="match-col" id="R">${right.map(w=>`<button class="match-btn" data-r="${w.r}">${escapeHtml(w.en)}</button>`).join('')}</div></div><div id="fb" style="margin-top:16px"></div>`;
+  const clr=()=>{ document.querySelectorAll('.match-btn.sel').forEach(x=>x.classList.remove('sel')); sel=null; };
+  document.querySelectorAll('#L .match-btn').forEach(b=>b.onclick=()=>{ clr(); b.classList.add('sel'); sel=b; });
+  document.querySelectorAll('#R .match-btn').forEach(b=>b.onclick=()=>{ if(!sel){ toast('Pick a Bengali word first'); return; }
+    if(sel.dataset.r===b.dataset.r){ sel.classList.add('matched'); b.classList.add('matched'); speak(W(b.dataset.r).sc); clr(); done++;
+      if(done===picks.length) $('#fb').innerHTML=`<div class="feedback ok">Board cleared. All five matched.</div>`; }
+    else { b.classList.add('wrong'); setTimeout(()=>b.classList.remove('wrong'),400); clr(); } }); }
+
+/* ---------- people ---------- */
+function personTotal(name){ const s=new Set(); DAYS.filter(d=>d.person===name).forEach(d=>d.phrases.forEach(p=>s.add(p))); return s.size; }
+function personLearned(name){ const s=new Set(); DAYS.filter(d=>d.person===name).forEach(d=>d.phrases.forEach(p=>{ if(state.learned.has(p)) s.add(p); })); return s.size; }
+function personScenes(name){ return DAYS.filter(d=>d.person===name && DIALOGUES[d.id]); }
+function viewPeople(){ app().innerHTML=`<span class="crumb" onclick="location.hash='#/library'">Back to library</span>
+  <div class="app-head"><h1>Your people in Kolkata <span class="sc">লোকজন</span></h1>
+    <p>The people you get to know, and who decide how you speak. Sourav gets <b class="bn">tui</b>. Bishu-da gets <b class="bn">aapni</b>.</p></div>
+  <div class="people-grid">${PEOPLE.map(pp=>{ const t=personTotal(pp.name), l=personLearned(pp.name), sc=personScenes(pp.name);
+    return `<div class="person"><div class="top"><span class="avatar" style="background:${pp.color}">${escapeHtml(pp.name[0])}</span>
+      <div><h4>${escapeHtml(pp.name)} <span class="sc" style="color:var(--text-muted);font-weight:600;font-size:.85rem">${pp.sc}</span></h4><span class="reg">${pp.reg}</span></div></div>
+      <div class="role">${escapeHtml(pp.role)}</div><p>${escapeHtml(pp.blurb)}</p>
+      ${t?`<p class="muted" style="margin-top:8px;font-size:.88rem">You can say ${l} of ${t} of their phrases.</p>`:''}
+      ${sc.length?`<div style="margin-top:8px">${sc.map(d=>`<button class="mini-link" onclick="location.hash='#/scene/${d.id}'">Read the scene: ${escapeHtml(d.title)}</button>`).join('')}</div>`:''}
+    </div>`; }).join('')}</div>`; }
+
+/* ---------- guides ---------- */
+function viewGuides(){ app().innerHTML=`<span class="crumb" onclick="location.hash='#/library'">Back to library</span>
+  <div class="app-head"><h1>Guides <span class="sc">নির্দেশিকা</span></h1><p>Plain explanations of the parts of spoken Bengali that trip people up.</p></div>
+  <div class="grid grid-2">${GUIDES.map(g=>`<button class="guide" onclick="location.hash='#/guide/${g.id}'"><h3>${escapeHtml(g.title)}</h3><p>${escapeHtml(g.summary)}</p><span class="tags">${escapeHtml(g.tags)}</span></button>`).join('')}</div>`; }
+function viewGuideDetail(id){ const g=GUIDES.find(x=>x.id===id); if(!g) return viewGuides();
+  app().innerHTML=`<span class="crumb" onclick="location.hash='#/guides'">All guides</span>
+    <article class="prose"><span class="tags" style="color:var(--teal-700);font-weight:800">${escapeHtml(g.tags)}</span>
+      <h1>${escapeHtml(g.title)}</h1><p class="lead" style="margin:8px 0 22px">${escapeHtml(g.summary)}</p>${renderProse(g.body)}</article>
+    <div class="prose-nav">${GUIDES.map(x=>`<button class="mini-link ${x.id===id?'cur':''}" onclick="location.hash='#/guide/${x.id}'">${escapeHtml(x.title)}</button>`).join('')}</div>`; }
+
+/* ---------- writing / blog ---------- */
+function viewWriting(){ app().innerHTML=`<span class="crumb" onclick="location.hash='#/library'">Back to library</span>
+  <div class="app-head"><h1>Writing <span class="sc">লেখা</span></h1><p>Notes from the person who wrote the chapters, on learning to speak Bengali.</p></div>
+  <div class="grid">${BLOG.map(b=>`<button class="post" onclick="location.hash='#/post/${b.id}'"><h3>${escapeHtml(b.title)}</h3><p class="muted">${escapeHtml(b.deck)}</p><div class="meta">${escapeHtml(b.date)}. ${b.mins} min read</div></button>`).join('')}</div>`; }
+function viewPost(id){ const b=BLOG.find(x=>x.id===id); if(!b) return viewWriting();
+  app().innerHTML=`<span class="crumb" onclick="location.hash='#/writing'">All writing</span>
+    <article class="prose"><h1>${escapeHtml(b.title)}</h1><p class="lead" style="margin:8px 0 6px">${escapeHtml(b.deck)}</p>
+      <div class="meta" style="color:var(--text-faint);font-weight:700;margin-bottom:22px">${escapeHtml(b.date)}. ${b.mins} min read</div>${renderProse(b.body)}</article>`; }
+
+/* ---------- script lab (learn to write Bangla) ---------- */
+const SCRIPT_ALL = [
+  ...SCRIPT.vowels.map(x=>({...x,sec:'Vowels'})),
+  ...SCRIPT.consonants.map(x=>({...x,sec:'Consonants'})),
+  ...SCRIPT.numerals.map(x=>({...x,sec:'Numerals'})),
+];
+function letterTile(x,gi){ return `<button class="lcard" onclick="location.hash='#/letter/${gi}'"><span class="lch">${x.ch}</span><span class="lname">${escapeHtml(x.name)}</span></button>`; }
+function viewScript(){
+  let gi=-1; const sect=(title,bn,arr)=>{ return `<div class="unit-head"><div><span class="unit-bn script">${bn}</span><h3>${title}</h3></div></div>
+    <div class="lgrid">${arr.map(x=>{ gi++; return letterTile(x,gi); }).join('')}</div>`; };
+  app().innerHTML=`<span class="crumb" onclick="location.hash='#/library'">Back to library</span>
+    <div class="app-head"><h1>Learn the script <span class="sc">হাতের লেখা</span></h1>
+      <p>Kotha teaches you to speak first. When you want the alphabet too, this is the writing pad. Tap a letter to hear it, see a word it lives in, and trace it with your finger.</p></div>
+    ${sect('Vowels','স্বরবর্ণ',SCRIPT.vowels)}
+    ${sect('Consonants','ব্যঞ্জনবর্ণ',SCRIPT.consonants)}
+    ${sect('Numerals','সংখ্যা',SCRIPT.numerals)}`;
+}
+function viewLetter(gi){ const x=SCRIPT_ALL[gi]; if(!x) return viewScript();
+  const isNum=gi>=SCRIPT.vowels.length+SCRIPT.consonants.length;
+  const steps = isNum
+    ? ['Start at the top of the numeral.','Draw it in one flowing stroke where you can, top to bottom.','Numerals have no matra headline, so no top line.']
+    : ['Draw the body of the letter first, starting at the top and moving down.','Make the curves and bellies left to right, keeping the pen flowing.','Add the matra, the straight headline across the top, last, in one stroke from left to right.'];
+  app().innerHTML=`<span class="crumb" onclick="location.hash='#/script'">${icon('back')} All letters</span>
+    <div class="letter-detail">
+      <div class="letter-info"><div class="lbig">${x.ch}</div>
+        <div class="lname-big">${escapeHtml(x.name)}</div><div class="lipa">${escapeHtml(x.ipa)}</div>
+        ${x.exsc?`<div class="lex">as in <button class="ex-say" data-say="${x.exsc}">${SPK}</button> <b>${escapeHtml(x.ex)}</b> <span class="sc">${x.exsc}</span> ${escapeHtml(x.exen)}</div>`:''}
+        <button class="speak-btn" data-say="${x.exsc||x.ch}" style="margin-top:12px">${SPK} Listen</button>
+        <div class="howto"><div class="howto-t">How to write it</div>
+          <ol>${steps.map(s=>`<li>${s}</li>`).join('')}</ol></div></div>
+      <div class="trace-wrap"><div class="trace-title">Trace the faint letter, then try it free</div>
+        <canvas id="trace" width="320" height="320"></canvas>
+        <div class="trace-hint">Stroke order runs top to bottom${isNum?'':', matra last, left to right'} ${isNum?'':icon('back','flip')}</div>
+        <div class="trace-actions"><button class="btn btn-ghost btn-sm" id="clr">Clear</button>
+          <button class="btn btn-ghost btn-sm" id="prev">Previous</button><button class="btn btn-teal btn-sm" id="next">Next letter</button></div></div>
+    </div>`;
+  initTrace(x.ch, !isNum);
+  $('#prev').onclick=()=>location.hash='#/letter/'+((gi-1+SCRIPT_ALL.length)%SCRIPT_ALL.length);
+  $('#next').onclick=()=>location.hash='#/letter/'+((gi+1)%SCRIPT_ALL.length);
+}
+function initTrace(ch,matra){
+  const cv=$('#trace'); if(!cv) return; const ctx=cv.getContext('2d');
+  const cs=getComputedStyle(document.documentElement);
+  const ghost=(cs.getPropertyValue('--accent')||'#3b4ee6').trim();
+  const strokeC=(cs.getPropertyValue('--t-600')||'#0f736d').trim();
+  function bg(){ ctx.clearRect(0,0,320,320); ctx.save(); ctx.globalAlpha=.15; ctx.fillStyle=ghost;
+    ctx.font='230px "Hind Siliguri", serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(ch,160,172);
+    if(matra){ ctx.globalAlpha=.35; ctx.strokeStyle=strokeC; ctx.lineWidth=2; ctx.setLineDash([6,6]);
+      ctx.beginPath(); ctx.moveTo(52,64); ctx.lineTo(268,64); ctx.stroke();
+      ctx.setLineDash([]); ctx.beginPath(); ctx.moveTo(260,58); ctx.lineTo(268,64); ctx.lineTo(260,70); ctx.stroke(); }
+    ctx.restore(); }
+  bg(); ctx.strokeStyle=strokeC; ctx.lineWidth=8; ctx.lineCap='round'; ctx.lineJoin='round';
+  let drawing=false;
+  const pos=e=>{ const r=cv.getBoundingClientRect(); const t=e.touches?e.touches[0]:e; return [(t.clientX-r.left)*(320/r.width),(t.clientY-r.top)*(320/r.height)]; };
+  const start=e=>{ drawing=true; const [x,y]=pos(e); ctx.beginPath(); ctx.moveTo(x,y); e.preventDefault(); };
+  const move=e=>{ if(!drawing) return; const [x,y]=pos(e); ctx.lineTo(x,y); ctx.stroke(); e.preventDefault(); };
+  const end=()=>drawing=false;
+  cv.addEventListener('mousedown',start); cv.addEventListener('mousemove',move); window.addEventListener('mouseup',end);
+  cv.addEventListener('touchstart',start,{passive:false}); cv.addEventListener('touchmove',move,{passive:false}); cv.addEventListener('touchend',end);
+  $('#clr').onclick=bg;
+}
+
+/* ---------- progress ---------- */
+function viewProgress(){ const mins=Math.max(1,Math.round(state.seconds/60));
+  const met=PEOPLE.filter(p=>DAYS.some(d=>state.days.has(d.id)&&d.person===p.name)).length;
+  app().innerHTML=`<span class="crumb" onclick="location.hash='#/library'">Back to library</span>
+    <div class="app-head"><h1>Your progress <span class="sc">অগ্রগতি</span></h1><p>Your time here, and your people in Kolkata.</p></div>
+    ${state.user?'':'<div class="signin-strip">You are not signed in. Progress is saved on this device only. <button class="mini-link" id="si">Sign in to keep it</button></div>'}
+    <div class="stat-row">
+      <div class="stat"><div class="big">${state.newToday}</div><div class="lbl">New today</div></div>
+      <div class="stat"><div class="big">${state.revisited}</div><div class="lbl">Reviewed today</div></div>
+      <div class="stat"><div class="big">${mins}m</div><div class="lbl">Total time</div></div>
+      <div class="stat"><div class="big">${state.words.size}</div><div class="lbl">In album</div></div></div>
+    <div class="card" style="margin:22px 0"><div style="display:flex;justify-content:space-between;font-weight:800"><span>Chapters</span><span class="muted" style="font-weight:700">${state.days.size} of ${DAYS.length}</span></div>
+      <div class="progress-track"><div class="progress-fill" style="width:${Math.round(state.days.size/DAYS.length*100)}%"></div></div></div>
+    <h2 class="h-sub serif" style="margin:26px 0 6px">Your people</h2>
+    <p class="muted" style="margin-bottom:16px">${met} met. You meet each one when the story reaches them.</p>
+    <div class="people-grid">${PEOPLE.map(pp=>{ const m=DAYS.some(d=>state.days.has(d.id)&&d.person===pp.name); const t=personTotal(pp.name), l=personLearned(pp.name);
+      return `<div class="person"><div class="top"><span class="avatar" style="background:${pp.color}">${escapeHtml(pp.name[0])}</span>
+        <div><h4>${escapeHtml(pp.name)}</h4><span class="role" style="margin:0">${escapeHtml(pp.role)}</span></div></div>
+        <p class="muted" style="margin-top:6px;font-size:.88rem">${m?'<span style="color:var(--success);font-weight:800">met</span>':'<span class="faint">not met yet</span>'}${t?`. You can say ${l} of ${t} phrases`:''}</p></div>`; }).join('')}</div>
+    <div class="player-actions" style="margin-top:24px"><button class="btn btn-ghost btn-sm" id="reset">Reset progress</button></div>`;
+  if($('#si')) $('#si').onclick=openSignin;
+  $('#reset').onclick=()=>{ if(confirm('Clear all saved progress on this device?')){ localStorage.removeItem(KEY); location.reload(); } };
+}
+
+/* ---------- boot ---------- */
+applyTheme();
+renderThemeCtl();
+renderAccount();
+(function navIcons(){ const m={home:'home',learn:'book',script:'pen',writing:'feather',profile:'chart'};
+  document.querySelectorAll('[data-nav]').forEach(a=>{ const k=m[a.dataset.nav]; if(k&&!a.querySelector('svg')) a.insertAdjacentHTML('afterbegin',icon(k)); });
+})();
+router();
