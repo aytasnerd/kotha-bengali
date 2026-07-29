@@ -60,6 +60,7 @@ function load(){
     learned:new Set(s.learned||[]), words:new Set(s.words||[]), days:new Set(s.days||[]),
     newToday:s.newToday||0, revisited:s.revisited||0, seconds:s.seconds||0,
     date:s.date||today(), user:s.user||null, track:s.track||null,
+    srs:s.srs||{}, streak:s.streak||{n:0,best:0,last:null,freeze:1}, daily:s.daily||{date:today(),done:0,goal:12}, hist:s.hist||{},
   };
   if(st.date!==today()){ st.newToday=0; st.revisited=0; st.date=today(); }
   return st;
@@ -69,12 +70,13 @@ function save(){
     learned:[...state.learned], words:[...state.words], days:[...state.days],
     newToday:state.newToday, revisited:state.revisited, seconds:state.seconds,
     date:state.date, user:state.user, track:state.track,
+    srs:state.srs, streak:state.streak, daily:state.daily, hist:state.hist,
   }));
 }
-function collectWord(r){ if(r && !state.words.has(r)){ state.words.add(r); save(); } }
+function collectWord(r){ if(r && !state.words.has(r)){ state.words.add(r); srsAdd('w',r); save(); } }
 function learnPhrase(id){
   if(!state.learned.has(id)){ state.learned.add(id); state.newToday++; } else state.revisited++;
-  (PHRASES[id].words||[]).forEach(collectWord); save();
+  (PHRASES[id].words||[]).forEach(collectWord); srsAdd('p',id); save();
 }
 
 /* ---------- helpers ---------- */
@@ -164,8 +166,172 @@ function openSignin(){
   $('#gbtn',ov).onclick=()=>{ state.user={name:'Kabir', email:'you@example.com'}; save(); ov.classList.remove('open'); renderAccount(); toast('Signed in. Your progress will be saved.'); };
 }
 
+
+
+/* ==================== Memory engine ====================
+   SM-2 spaced repetition with ease factors (Wozniak), Anki style
+   four button grading, short learning steps for new material,
+   separate ledgers for recognition and production (encoding
+   specificity), interleaved queues, interval fuzz so reviews do not
+   clump, leech detection, a daily new card cap, and a forgiving
+   streak. Retrieval always comes before the answer (testing effect).  */
+const DAY=864e5;
+const NEW_CAP=15;             // new items introduced per day
+const LEECH=5;                // misses before an item is flagged
+function dstr(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function todayStr(){ return dstr(new Date()); }
+function addDays(n){ const d=new Date(); d.setDate(d.getDate()+Math.max(0,Math.round(n))); return dstr(d); }
+function fuzz(i){ if(i<2) return i; const j=Math.max(1,Math.round(i*0.15)); return i+(Math.floor(Math.random()*(2*j+1))-j); }
+/* key: type:id:dir   dir = r (recognition, Bengali to English) | p (production, English to Bengali) */
+function sk(type,id,dir){ return type+':'+id+':'+dir; }
+function srsAdd(type,id){
+  ['r','p'].forEach(dir=>{ const k=sk(type,id,dir);
+    if(!state.srs[k]) state.srs[k]={ef:2.5,n:0,iv:0,due:todayStr(),step:0,seen:0,miss:0,新:1}; });
+}
+function srsGrade(type,id,dir,q){       // q: 0 again, 1 hard, 2 good, 3 easy
+  const k=sk(type,id,dir);
+  const it=state.srs[k]||(state.srs[k]={ef:2.5,n:0,iv:0,due:todayStr(),step:0,seen:0,miss:0});
+  it.seen++; delete it['新'];
+  if(q===0){
+    it.miss++; it.n=0; it.step=0; it.iv=0; it.due=todayStr(); it.relearn=1;
+    it.ef=Math.max(1.3,it.ef-0.2);
+    if(it.miss>=LEECH) it.leech=1;
+  } else {
+    if(it.step<2 && it.n===0){         // learning steps, same day
+      it.step++;
+      if(it.step<2){ it.due=todayStr(); }
+      else { it.n=1; it.iv=q===3?4:1; it.due=addDays(it.iv); it.relearn=0; }
+    } else {
+      it.n++;
+      it.iv = it.n<=1 ? (q===3?4:1) : it.n===2 ? 6 : Math.round(it.iv*it.ef*(q===1?0.7:q===3?1.3:1));
+      it.iv = Math.max(1,fuzz(it.iv));
+      it.due=addDays(it.iv); it.relearn=0;
+    }
+    it.ef=Math.min(2.8,Math.max(1.3, it.ef + (0.1-(3-q)*(0.08+(3-q)*0.02))));
+  }
+  bumpDaily(); save();
+}
+function allItems(){ const o=[]; for(const k in state.srs){ const [type,id,dir]=k.split(':'); o.push({k,type,id,dir,it:state.srs[k]}); } return o; }
+function dueList(){
+  const t=todayStr();
+  const items=allItems().filter(x=>x.it.due<=t);
+  const fresh=items.filter(x=>x.it['新']).slice(0,NEW_CAP);
+  const old=items.filter(x=>!x.it['新']);
+  // interleave: alternate direction and pack so practice is varied, not blocked
+  const mixed=shuffle(old).sort((a,b)=>(a.it.leech?-1:0)-(b.it.leech?-1:0));
+  const out=[]; const A=mixed, B=shuffle(fresh);
+  while(A.length||B.length){ if(A.length) out.push(A.shift()); if(A.length) out.push(A.shift()); if(B.length) out.push(B.shift()); }
+  return out;
+}
+function dueCount(){ return dueList().length; }
+function matureCount(){ return allItems().filter(x=>x.it.iv>=21).length; }
+function knownCount(){ return allItems().filter(x=>x.it.iv>=7).length; }
+function leeches(){ return allItems().filter(x=>x.it.leech); }
+function forecast(days){
+  const out=[]; for(let i=0;i<days;i++){ const d=addDays(i);
+    out.push(allItems().filter(x=>x.it.due===d).length); } return out;
+}
+function rollDaily(){ const t=todayStr();
+  if(state.daily.date!==t){ state.daily={date:t,done:0,goal:state.daily.goal||12}; save(); } }
+function bumpDaily(){
+  rollDaily(); state.daily.done++;
+  state.hist[state.daily.date]=(state.hist[state.daily.date]||0)+1;
+  const t=todayStr(), last=state.streak.last;
+  if(last!==t){
+    if(!last) state.streak.n=1;
+    else{ const gap=Math.round((new Date(t)-new Date(last))/DAY);
+      if(gap===1) state.streak.n++;
+      else if(gap===2 && state.streak.freeze>0){ state.streak.freeze--; state.streak.n++; }
+      else state.streak.n=1; }
+    state.streak.last=t;
+    state.streak.best=Math.max(state.streak.best||0,state.streak.n);
+    if(state.streak.n%7===0) state.streak.freeze=Math.min((state.streak.freeze||0)+1,2);
+  }
+  save();
+}
+function streakDays(n){ const o=[]; for(let i=n-1;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); o.push(dstr(d)); } return o; }
+
+/* ---------- review session ---------- */
+let R=null;
+function viewReview(){
+  rollDaily();
+  const q=dueList();
+  if(!q.length){
+    app().innerHTML=`<span class="crumb" onclick="location.hash='#/library'">${icon('back')} Library</span>
+      <div class="done-card"><div class="done-mark">${icon('check')}</div><h2>Nothing due</h2>
+      <p class="muted">You are clear. Items come back on their own schedule, just before you would forget them.</p>
+      <div class="player-actions" style="justify-content:center;margin-top:18px">
+        <button class="btn btn-primary" onclick="location.hash='#/story'">Carry on with the story</button>
+        <button class="btn btn-ghost" onclick="location.hash='#/album'">Browse words</button></div></div>`;
+    return;
+  }
+  R={q,i:0,ok:0,again:0}; reviewStep();
+}
+function ivLabel(it,q){
+  const clone=JSON.parse(JSON.stringify(it));
+  if(q===0) return 'now';
+  let iv;
+  if(clone.step<2 && clone.n===0) iv=(clone.step<1)?0:(q===3?4:1);
+  else iv = clone.n<=1 ? (q===3?4:1) : clone.n===2 ? 6 : Math.round(clone.iv*clone.ef*(q===1?0.7:q===3?1.3:1));
+  if(iv===0) return 'later today';
+  return iv===1?'1 day':iv+' days';
+}
+function reviewStep(){
+  if(R.i>=R.q.length){
+    const acc=R.q.length?Math.round(R.ok/R.q.length*100):0;
+    app().innerHTML=`<span class="crumb" onclick="location.hash='#/library'">${icon('back')} Library</span>
+      <div class="done-card"><div class="done-mark">${icon('check')}</div><h2>${acc}% recalled</h2>
+      <p class="muted">${R.q.length} reviewed. What you missed returns today, what you knew moves further out.</p>
+      <div class="stat-row" style="margin-top:20px">
+        <div class="stat"><div class="big">${state.streak.n}</div><div class="lbl">Day streak</div></div>
+        <div class="stat"><div class="big">${state.daily.done}</div><div class="lbl">Today</div></div>
+        <div class="stat"><div class="big">${dueCount()}</div><div class="lbl">Still due</div></div>
+        <div class="stat"><div class="big">${knownCount()}</div><div class="lbl">Learned</div></div></div>
+      <div class="player-actions" style="justify-content:center;margin-top:18px">
+        <button class="btn btn-primary" onclick="location.hash='#/library'">Done</button>
+        ${dueCount()?`<button class="btn btn-ghost" onclick="location.hash='#/review';router()">Keep going</button>`:''}</div></div>`;
+    return;
+  }
+  const item=R.q[R.i];
+  const rec = item.type==='w' ? WORDS.find(w=>w.r===item.id) : PHRASES[item.id];
+  if(!rec){ R.i++; return reviewStep(); }
+  const pr = item.type==='w' ? rec : pzPhrase(rec);
+  const prod = item.dir==='p';
+  const pct=Math.round(R.i/R.q.length*100);
+  const prompt = prod
+    ? `<div class="rung-label"><span class="pip"></span>Produce it in Bengali${item.it.leech?' <span class="leech-tag">tricky one</span>':''}</div>
+       <div class="q-en">${escapeHtml(pr.en)}</div><p class="q-hint">Say it out loud before you check.</p>`
+    : `<div class="rung-label"><span class="pip"></span>What does this mean?${item.it.leech?' <span class="leech-tag">tricky one</span>':''}</div>
+       <div class="q-roman">${escapeHtml(pr.r)}</div><div class="q-sc">${pr.sc}</div>`;
+  app().innerHTML=`<span class="crumb" onclick="location.hash='#/library'">${icon('back')} Library</span>
+    <div class="game-hud"><span>${R.i+1} of ${R.q.length}</span><span class="score">${prod?'Recall':'Listen'}</span></div>
+    <div class="player"><div class="pbar"><i style="width:${pct}%"></i></div>
+      ${prompt}
+      ${prod?'':`<button class="speak-btn" data-say="${escapeHtml(pr.sc)}">${SPK} Listen</button>`}
+      <div id="rev"></div>
+      <div class="player-actions" id="acts"><button class="btn btn-teal" id="show">Show answer</button></div></div>`;
+  if(!prod){ wireSay(app()); speak(pr.sc); }
+  $('#show').onclick=()=>{
+    speak(pr.sc);
+    $('#rev').innerHTML=`<div class="reveal-box">
+        <div class="r">${escapeHtml(pr.r)}</div><div class="s">${pr.sc}</div>
+        ${pr.ph?`<div class="q-ph" style="margin-top:4px">${escapeHtml(pr.ph)}</div>`:''}
+        <div class="daily-sub">${escapeHtml(pr.en)}</div>
+        ${rec.note?`<div class="pop-note" style="margin-top:10px;text-align:left">${escapeHtml(rec.note)}</div>`:''}</div>`;
+    $('#acts').innerHTML=`
+      <button class="grade g-again" data-q="0">Again<small>${ivLabel(item.it,0)}</small></button>
+      <button class="grade g-hard"  data-q="1">Hard<small>${ivLabel(item.it,1)}</small></button>
+      <button class="grade g-good"  data-q="2">Good<small>${ivLabel(item.it,2)}</small></button>
+      <button class="grade g-easy"  data-q="3">Easy<small>${ivLabel(item.it,3)}</small></button>`;
+    $('#acts').querySelectorAll('.grade').forEach(b=>b.onclick=()=>{
+      const q=+b.dataset.q; srsGrade(item.type,item.id,item.dir,q);
+      if(q===0){ R.again++; R.q.push(item); } else R.ok++;
+      R.i++; reviewStep();
+    });
+  };
+}
 /* ============================ ROUTER ============================ */
-const NAVGROUP = { '':'home', library:'home', album:'home', games:'home', game:'home', people:'home',
+const NAVGROUP = { '':'home', review:'home', library:'home', album:'home', games:'home', game:'home', people:'home',
   guides:'home', guide:'home', story:'learn', day:'learn', scene:'learn',
   script:'script', letter:'script', writing:'writing', post:'writing', progress:'profile' };
 function router(){
@@ -178,6 +344,7 @@ function router(){
   else if(base==='post') viewPost(arg);
   else if(base==='letter') viewLetter(+arg);
   else if(base==='scene') viewScene(arg);
+  else if(base==='review') viewReview();
   else (map[base]||viewLibrary)();
   document.querySelectorAll('[data-nav]').forEach(a=>a.classList.toggle('active', a.dataset.nav===(NAVGROUP[base]||'home')));
   wireSay(app());
@@ -201,9 +368,21 @@ function viewLibrary(){
     {ic:'feather',t:'Writing',    p:'Notes on how the chapters were built, and how to learn to speak.', c:BLOG.length+' essays', go:'#/writing'},
     {ic:'chart',t:'Your progress',p:'Time spent, words held, people met.', c:'', go:'#/progress'},
   ];
+  rollDaily();
+  const due=dueCount(), goal=state.daily.goal||12, done=state.daily.done||0;
+  const ring=Math.min(100,Math.round(done/goal*100));
   app().innerHTML=`
     <div class="app-head"><h1>Library <span class="sc">লাইব্রেরি</span></h1>
       <p>Find your own way in. Every shelf is a door, and the doors connect.</p></div>
+    <div class="daily-card">
+      <div class="daily-main">
+        <div class="daily-streak"><span class="flame">${icon('bolt')}</span><b>${state.streak.n}</b> day${state.streak.n===1?'':'s'} in a row</div>
+        <div class="daily-sub">${due? due+' due for review right now' : 'Nothing due. You are clear for today.'}</div>
+        <div class="goalbar"><i style="width:${ring}%"></i></div>
+        <div class="daily-sub">${done} of ${goal} today${state.streak.freeze?`, ${state.streak.freeze} rest day banked`:''}</div>
+      </div>
+      <button class="btn btn-primary" id="startrev">${due?'Review '+due:'Practise'}</button>
+    </div>
     <div class="today-card">
       <div><div class="sub">Word of the day</div>
         <div class="wod">${wod.r} <span class="sc">${wod.sc}</span></div>
@@ -577,6 +756,18 @@ function viewProgress(){ const mins=Math.max(1,Math.round(state.seconds/60));
   app().innerHTML=`<span class="crumb" onclick="location.hash='#/library'">Back to library</span>
     <div class="app-head"><h1>Your progress <span class="sc">অগ্রগতি</span></h1><p>Your time here, and your people in Kolkata.</p></div>
     ${state.user?'':'<div class="signin-strip">You are not signed in. Progress is saved on this device only. <button class="mini-link" id="si">Sign in to keep it</button></div>'}
+    <div class="stat-row">
+      <div class="stat"><div class="big">${state.streak.n}</div><div class="lbl">Day streak</div></div>
+      <div class="stat"><div class="big">${state.streak.best||0}</div><div class="lbl">Best streak</div></div>
+      <div class="stat"><div class="big">${dueCount()}</div><div class="lbl">Due now</div></div>
+      <div class="stat"><div class="big">${matureCount()}</div><div class="lbl">Solid</div></div></div>
+    <div class="card" style="margin:0 0 22px"><div class="howto-t">Coming up, next 14 days</div>
+      <div class="fcast">${(()=>{const f=forecast(14),m=Math.max(1,...f);return f.map(n=>`<span style="height:${Math.round(n/m*100)}%" title="${n} due"></span>`).join('')})()}</div>
+      <div class="daily-sub" style="margin-top:8px">Your review load, spaced out so it never piles up.${leeches().length?` ${leeches().length} tricky item${leeches().length===1?'':'s'} are being repeated more often.`:''}</div></div>
+    <div class="card" style="margin:0 0 22px"><div class="howto-t">Last 30 days</div>
+      <div class="heat">${streakDays(30).map(d=>{const n=state.hist[d]||0;const lv=n===0?0:n<5?1:n<12?2:3;
+        return `<span class="hcell l${lv}" title="${d}: ${n}"></span>`;}).join('')}</div>
+      <div class="daily-sub" style="margin-top:8px">Each square is a day. Darker means more reviews.</div></div>
     <div class="stat-row">
       <div class="stat"><div class="big">${state.newToday}</div><div class="lbl">New today</div></div>
       <div class="stat"><div class="big">${state.revisited}</div><div class="lbl">Reviewed today</div></div>
